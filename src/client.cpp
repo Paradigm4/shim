@@ -34,6 +34,7 @@ extern "C"
 }
 
 #include "SciDBAPI.h"
+#include "rbac/SessionProperties.h"
 
 using namespace std;
 using namespace scidb;
@@ -51,7 +52,8 @@ extern "C" void * scidbconnect(const char *host, int port, const char* username,
   {
       if(username == NULL || password == NULL)
       {
-          conn = db.connect(host, port);
+          scidb::SessionProperties props;
+          conn = db.connect(props, host, port);
       }
       else
       {
