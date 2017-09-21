@@ -113,7 +113,7 @@ typedef struct
 enum mimetype
 { html, plain, binary };
 
-const char SCIDB_HOST[] = "localhost";
+char *SCIDB_HOST = "localhost";
 int SCIDB_PORT = 1239;
 session *sessions;              // Fixed pool of web client sessions
 char *docroot;
@@ -1382,9 +1382,9 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
         {
         case 'h':
           printf
-            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o http session timeout] [-i instance id for save]\n");
+            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>]\n");
           printf
-            ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\n");
+            ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB host is localhost.\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\n");
           printf
             ("Start up shim and view http://localhost:8080/api.html from a browser for help with the API.\n\n");
           exit (0);
@@ -1425,6 +1425,9 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
         case 'o':
           TIMEOUT = atoi (optarg);
           TIMEOUT = (TIMEOUT < 60 ? 60 : TIMEOUT);
+          break;
+        case 'n':
+          SCIDB_HOST = optarg;
           break;
         default:
           break;

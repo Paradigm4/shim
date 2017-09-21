@@ -28,6 +28,7 @@ cat >/var/lib/shim/conf << EOF
 # for more information on the options.
 
 #ports=8080,8083s
+#scidbhost=localhost
 scidbport=$PORT
 instance=$INS
 tmp=$TMP

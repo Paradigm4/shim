@@ -65,6 +65,7 @@ Available options include:
 
 ```
 #ports=8080,8083s
+#scidbhost=localhost
 scidbport=1239
 instance=0
 tmp=/home/scidb/scidbdata/000/0/tmp
@@ -103,14 +104,22 @@ Here are some examples of possible port configurations:
 <tr><td>127.0.0.1:8080,1234s <td> <td>List on port 8080 but only on the local loopback interface; listen on port 1234(TLS/SSL) on all interfaces.
 </table>
 
-## SciDB Port
+## SciDB Connection
 
-Shim runs on the same computer as a SciDB coordinator. Set the 'scidbport'
-option to select the coordinator database port to locally connect to. The
-default SciDB database port value is 1239 (see the SciDB configuration manual
-for more information). Since any SciDB instance can act as a query coordinator,
-it is possible to configure multiple shim services, for example one shim
-service per computer IP address.
+In most of the cases, Shim runs on the same computer as a SciDB
+coordinator. Set the 'scidbport' option to select the coordinator
+database port to locally connect to. The default SciDB database port
+value is 1239 (see the SciDB configuration manual for more
+information). Since any SciDB instance can act as a query coordinator,
+it is possible to configure multiple shim services, for example one
+shim service per computer IP address.
+
+In special cases, Shim can run on a different computer that the SciDB
+coordinator. For these cases, set the `scidbhost` option to the
+hostname or IP of the computer on which the SciDB coordinator
+runs. Still, a temporary I/O space shared between the computer running
+Shim and the computer running the SciDB coordinator is needed (see
+Temporary I/O Space section below).
 
 ## Instance
 
@@ -119,7 +128,7 @@ this option is set together with the corresponding SciDB port number for the
 instance, and also set a corresponding temporary I/O location that the instance
 has read/write access to.
 
-## Temporary I/O space
+## Temporary I/O Space
 
 Shim's default behavior caches the output of SciDB queries in files on the
 SciDB server; set that file directory location with the config file tmp option
