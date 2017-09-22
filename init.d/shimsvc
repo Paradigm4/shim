@@ -36,6 +36,7 @@ AIO=
 # This parsing is pretty lame
 if test -f "/var/lib/shim/conf"; then
   PORTS="$(cat /var/lib/shim/conf | sed -n /^ports/p | cut -d '=' -f 2)"
+  SCIDBHOST="$(cat /var/lib/shim/conf | sed -n /^scidbhost/p | cut -d '=' -f 2)"
   SCIDBPORT="$(cat /var/lib/shim/conf | sed -n /^scidbport/p | cut -d '=' -f 2)"
   USER="$(cat /var/lib/shim/conf | sed -n /^user/p | cut -d '=' -f 2)"
   TMPD="$(cat /var/lib/shim/conf | sed -n /^tmp/p | cut -d '=' -f 2)"
@@ -46,6 +47,7 @@ if test -f "/var/lib/shim/conf"; then
 # Build up shim command line options
   test -n "${PORTS}" && PORTS="-p ${PORTS}"
   test -n "${TMPD}" && TMPD="-t ${TMPD}"
+  test -n "${SCIDBHOST}" && SCIDBHOST="-n ${SCIDBHOST}"
   test -n "${SCIDBPORT}" && SCIDBPORT="-s ${SCIDBPORT}"
   test -n "${MAX_SESSIONS}" && MAX_SESSIONS="-m ${MAX_SESSIONS}"
   test -n "${TIMEOUT}" && TIMEOUT="-o ${TIMEOUT}"

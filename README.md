@@ -71,6 +71,7 @@ you install `shim` from a binary rpm or deb package.
 ```
 auth=login
 ports=8080,8083s
+scidbhost=localhost
 scidbport=1239 (or auto-configured by apt/yum to a local SciDB port)
 user=root
 tmp=/tmp  (or auto-configured by apt/yum to local SciDB storage directory)
@@ -86,7 +87,8 @@ The options are:
 * `auth` A PAM authentication method (limited to 'login' for now).
 * `ports` A comma-delimited list of HTTP listening ports. Append the lowercase
 letter 's' to indicate SSL encryption.
-* `scidbport` The local port to talk to SciDB on.
+* `scidbhost` The host on which SciDB runs.
+* `scidbport` The port to talk to SciDB on.
 * `user` The user that the shim service runs under. Shim can run as a non-root
 user, but then SSL authenticated port logins are limited to the user that shim
 is running under.
