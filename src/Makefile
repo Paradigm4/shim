@@ -7,9 +7,24 @@ ifeq ($(SCIDB),)
 endif
 VERSION := $(shell scidb --version | head -n 1 | cut -d ':' -f 2 |tr -d ' ')
 
+# A way to set the 3rdparty prefix path that is convenient
+# for SciDB developers.
+ifeq ($(SCIDB_VER),)
+  SCIDB_3RDPARTY = $(SCIDB)
+else
+  SCIDB_3RDPARTY = /opt/scidb/$(SCIDB_VER)
+endif
+
+# A better way to set the 3rdparty prefix path that does
+# not assume an absolute path. You can still use the above
+# method if you prefer.
+ifeq ($(SCIDB_THIRDPARTY_PREFIX),)
+  SCIDB_THIRDPARTY_PREFIX := $(SCIDB_3RDPARTY)
+endif
+
 CFLAGS=-std=gnu99 -fopenmp -g -pedantic -DVERSION=\"$(VERSION)\"
-INC=-I. -DPROJECT_ROOT="\"$(SCIDB)\"" -I"$(SCIDB)/3rdparty/boost/include/" -I"$(SCIDB)/include" -I"$(SCIDB)/3rdparty/boost/include/boost/container" -DSCIDB_CLIENT
-LIBS=-lstdc++ -ldl -lz -pthread -L"$(SCIDB)/3rdparty/boost/lib" -L"$(SCIDB)/lib" -lscidbclient -lboost_system -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN:$$ORIGIN/../lib:$$ORIGIN/../../:$(SCIDB)/3rdparty/boost/lib:'
+INC=-I. -DPROJECT_ROOT="\"$(SCIDB)\"" -I"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boost/include/" -I"$(SCIDB)/include" -I"$(SCIDB)/3rdparty/boost/include/boost/container" -DSCIDB_CLIENT
+LIBS=-lstdc++ -ldl -lz -pthread -L"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boost/lib" -L"$(SCIDB)/lib" -lscidbclient -lboost_system -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN:$$ORIGIN/../lib:$$ORIGIN/../../:$(SCIDB)/3rdparty/boost/lib:'
 
 # Compiler settings for SciDB version >= 15.7
 ifneq ("$(wildcard /usr/bin/g++-4.9)","")
