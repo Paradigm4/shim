@@ -1108,7 +1108,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   mg_get_var (ri->query_string, k, "prefix", prefix, k);
   if (strlen(prefix) == 0)
-    { 
+    {
       free(prefix);
       prefix = 0;
     }
@@ -1167,9 +1167,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   syslog (LOG_INFO, "execute_query %d connected", id);
 
   if (prefix) // 1 or more statements to run first
-    {  
+    {
        char *qstart = prefix, *qend = qstart, last =0; //split on ';' (yes I think the internal AFL parser should do this too)
-       while (last!=1) 
+       while (last!=1)
          {
            qend = qstart;
            while (*qend != ';' && *qend != 0)
@@ -1258,7 +1258,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   if (q.queryid < 1)            // something went wrong
     {
       free (qry);
-      free (qrybuf); 
+      free (qrybuf);
       free (prefix);
       syslog (LOG_ERR, "execute_prepared_query error %s", SERR);
       if (!stream)
