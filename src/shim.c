@@ -289,6 +289,11 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
   session *s = find_session (id);
   if (s)
     {
+      syslog (LOG_INFO, "release_session %d disconnecting", s->sessionid);
+      if (s->con)
+        scidbdisconnect (s->con);
+      s->con = NULL;
+
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
@@ -372,7 +377,7 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
           memset (SERR, 0, MAX_VARLEN);
           executeQuery (can_con, var1, 1, SERR);
           syslog (LOG_INFO, "cancel_query %s", SERR);
-          scidbdisconnect (can_con);
+          // scidbdisconnect (can_con);
         }
       time (&s->time);
       respond (conn, plain, 200, 0, NULL);
@@ -1323,12 +1328,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   free (qry);
   free (qrybuf);
   free (prefix);
-  syslog (LOG_INFO, "execute_query %d done, disconnecting", s->sessionid);
-  if (s->con)
-    scidbdisconnect (s->con);
-  s->con = NULL;
+  syslog (LOG_INFO, "execute_query %d done", s->sessionid);
   if (rel > 0)
     {
+      syslog (LOG_INFO, "execute_query %d disconnecting", s->sessionid);
+      if (s->con)
+        scidbdisconnect (s->con);
+      s->con = NULL;
+
       syslog (LOG_INFO, "execute_query releasing HTTP session %d",
               s->sessionid);
       cleanup_session (s);
