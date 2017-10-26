@@ -662,7 +662,21 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 new_session (struct mg_connection *conn, const struct mg_request_info *ri)
 {
+  char USER[MAX_VARLEN];
+  char PASS[MAX_VARLEN];
   char buf[MAX_VARLEN];
+
+  memset (USER, 0, MAX_VARLEN);
+  memset (PASS, 0, MAX_VARLEN);
+
+  if (ri->query_string)
+    {
+      int k = strlen (ri->query_string);
+
+      mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
+      mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
+    }
+
 /* Check authentication.
  * 1. First check for digest authentication
  */
@@ -687,12 +701,44 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
   syslog (LOG_INFO, "new_session %d", j);
   if (j > -1)
     {
-      sessions[j].auth = auth;
+      session *s = &sessions[j];
+      int status;
+
+      s->auth = auth;
+
+      if(s->auth == SCIDB_AUTHENTICATED && strlen (USER) > 0)
+        {
+          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
+
+          if (!s->con)
+            {
+              respond_to_connection_error(conn, status);
+              cleanup_session (s);
+              omp_unset_lock (&s->lock);
+              return;
+            }
+        }
+      /*
+      We do the following to be backward compattible with the old API,
+      where the USER is provided in /execute or /cancel.
+
+      If no USER provided, do not establish SciDB connection. This
+      allows for the SciDB connection to be delayed and for the USER
+      to be provided in /execute or /cancel (old API). If no USER is
+      necessary, the SciDB connection will be established in /execute
+      or /cancel. If authentication is not used, the SciDB connection
+      will be established in /execute or /cancel.
+
+      else
+        {
+          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, NULL, NULL, &status);
+        }
+      */
+
       syslog (LOG_INFO,
-              "new_session auth=%d session id=%d ibuf=%s obuf=%s opipe=%s",
-              sessions[j].auth, sessions[j].sessionid, sessions[j].ibuf,
-              sessions[j].obuf, sessions[j].opipe);
-      snprintf (buf, MAX_VARLEN, "%d", sessions[j].sessionid);
+              "new_session auth=%d session id=%d ibuf=%s obuf=%s opipe=%s con=%p",
+              s->auth, s->sessionid, s->ibuf, s->obuf, s->opipe, s->con);
+      snprintf (buf, MAX_VARLEN, "%d", s->sessionid);
       respond (conn, plain, 200, strlen (buf), buf);
     }
   else
@@ -1144,6 +1190,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   int status;
   if (!s->con)
     {
+      syslog (LOG_INFO, "execute_query %d scidbconnect", id);
       if(s->auth == SCIDB_AUTHENTICATED && strlen (USER) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
