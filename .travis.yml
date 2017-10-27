@@ -13,7 +13,7 @@ before_install:
   - docker run
     --name scidb
     --detach
-    --volume /home/travis/build/rvernica/shim:/shim
+    --volume /home/travis/build/Paradigm4/shim:/shim
     --publish 8080:8080
     rvernica/scidb:${SCIDB_VER}
   - while ! curl http://localhost:8080/version; do sleep 1; done
