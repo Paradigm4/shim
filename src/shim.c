@@ -45,6 +45,7 @@
 #define DEFAULT_MAX_SESSIONS 50 // Maximum number of concurrent http sessions
 #define MAX_VARLEN 4096         // Static buffer length for http query params
 #define LCSV_MAX 16384
+#define SESSIONID_LEN 32 + 1    // Length of a session ID
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
@@ -63,6 +64,9 @@
                                 // orphaned and available to reap (seconds)
 #define SCIDB_AUTHENTICATED 2
 
+// characters allowed in session IDs
+char SESSIONID_CHARSET[] = "01234567890abcdefghijklmnopqrstuvwxyz";
+
 /* A session consists of client I/O buffers, and an optional SciDB query ID. */
 typedef enum
 {
@@ -72,7 +76,7 @@ typedef enum
 typedef struct
 {
   omp_lock_t lock;
-  int sessionid;                // session identifier
+  char sessionid[SESSIONID_LEN];// session identifier
   ShimQueryID qid;              // SciDB query identifier
   int pd;                       // output buffer file descrptor
   FILE *pf;                     //   and FILE pointer
@@ -129,7 +133,6 @@ int MAX_SESSIONS;               // configurable maximum number of concurrent ses
 int SAVE_INSTANCE_ID;           // which instance ID should run save commands?
 time_t TIMEOUT;                 // session timeout
 
-int counter;                    // Used to label sessionid
 int USE_AIO;                    //use accelerated io for some saves: 0/1
 
 /* copy input string to already-allocated output string, omitting incidences
@@ -218,13 +221,13 @@ respond (struct mg_connection *conn, enum mimetype type, int code,
 
 // Retrieve a session pointer from an id, return NULL if not found.
 session *
-find_session (int id)
+find_session (char * id)
 {
   int j;
   session *ans = NULL;
   for (j = 0; j < MAX_SESSIONS; ++j)
     {
-      if (sessions[j].sessionid != id)
+      if (strcmp(sessions[j].sessionid, id) != 0)
         continue;
       ans =
         sessions[j].available == SESSION_UNAVAILABLE ? &sessions[j] : NULL;
@@ -238,8 +241,9 @@ find_session (int id)
 void
 cleanup_session (session * s)
 {
-  syslog (LOG_INFO, "cleanup_session releasing %d", s->sessionid);
+  syslog (LOG_INFO, "cleanup_session releasing %s", s->sessionid);
   s->available = SESSION_AVAILABLE;
+  strcpy(s->sessionid, "NA");
   s->qid.queryid = 0;
   s->time = 0;
   if (s->pd > 0)
@@ -274,8 +278,8 @@ void
 release_session (struct mg_connection *conn, const struct mg_request_info *ri,
                  int resp)
 {
-  int id, k;
-  char var1[MAX_VARLEN];
+  int k;
+  char ID[SESSIONID_LEN];
   syslog (LOG_INFO, "release_session");
   if (!ri->query_string)
     {
@@ -284,12 +288,11 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var1, MAX_VARLEN);
-  id = atoi (var1);
-  session *s = find_session (id);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
+  session *s = find_session (ID);
   if (s)
     {
-      syslog (LOG_INFO, "release_session %d disconnecting", s->sessionid);
+      syslog (LOG_INFO, "release_session %s disconnecting", s->sessionid);
       if (s->con)
         scidbdisconnect (s->con);
       s->con = NULL;
@@ -329,9 +332,10 @@ void respond_to_connection_error(struct mg_connection *conn, int connection_stat
 void
 cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k;
+  int k;
   void *can_con;
   char var1[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   char SERR[MAX_VARLEN];
   char USER[MAX_VARLEN];
   char PASS[MAX_VARLEN];
@@ -342,16 +346,15 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var1, MAX_VARLEN);
-  id = atoi (var1);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
   memset (USER, 0, MAX_VARLEN);
   memset (PASS, 0, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
-  session *s = find_session (id);
+  session *s = find_session (ID);
   if (s && s->qid.queryid > 0)
     {
-      syslog (LOG_INFO, "cancel_query session %d queryid %llu.%llu", id,
+      syslog (LOG_INFO, "cancel_query session %s queryid %llu.%llu", ID,
               s->qid.coordinatorid, s->qid.queryid);
       if (s->con)
         {
@@ -387,6 +390,37 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
 }
 
 
+/* Generate random and unique session ID.
+ */
+void
+gen_sessionid (char * sessionid)
+{
+  int duplicate = 1;
+  while (duplicate)
+    {
+      int length = SESSIONID_LEN - 1;
+      char * id = sessionid;
+      while (length-- > 0)
+        {
+          size_t index = rand() % (sizeof(SESSIONID_CHARSET) - 1);
+          *id++ = SESSIONID_CHARSET[index];
+        }
+      *id = '\0';
+
+      duplicate = 0;
+      for (int i = 0; i < MAX_SESSIONS; ++i)
+        {
+          if (sessions[i].sessionid != sessionid
+              && strcmp(sessions[i].sessionid, sessionid) == 0)
+            {
+              duplicate = 1;
+              break;
+            }
+        }
+    }
+}
+
+
 /* Initialize a session. Obtain the big lock before calling this.
  * returns 1 on success, 0 otherwise.
  */
@@ -395,10 +429,7 @@ init_session (session * s)
 {
   int fd;
   omp_set_lock (&s->lock);
-  s->sessionid = counter;
-  counter++;
-  if (counter < 0)
-    counter = 1;
+  gen_sessionid(s->sessionid);
   s->ibuf = (char *) malloc (PATH_MAX);
   s->obuf = (char *) malloc (PATH_MAX);
   s->opipe = (char *) malloc (PATH_MAX);
@@ -459,7 +490,7 @@ init_session (session * s)
     }
   char *pipename;
   pipename = (char *) malloc (PATH_MAX);
-  snprintf (pipename, PATH_MAX, "%s/shim_generic_pipe%d", TMPDIR,
+  snprintf (pipename, PATH_MAX, "%s/shim_generic_pipe_%s", TMPDIR,
             s->sessionid);
   syslog (LOG_ERR, "creating generic pipe: %s", pipename);
   fd =
@@ -571,9 +602,9 @@ logout (struct mg_connection *conn)
 void
 post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k;
+  int k;
   session *s;
-  char var1[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   char buf[MAX_VARLEN];
   if (!ri->query_string)
     {
@@ -582,9 +613,8 @@ post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var1, MAX_VARLEN);
-  id = atoi (var1);
-  s = find_session (id);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
+  s = find_session (ID);
   if (s)
     {
       omp_set_lock (&s->lock);
@@ -621,9 +651,9 @@ post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 upload (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k;
+  int k;
   session *s;
-  char var1[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   char buf[MAX_VARLEN];
   if (!ri->query_string)
     {
@@ -632,9 +662,8 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var1, MAX_VARLEN);
-  id = atoi (var1);
-  s = find_session (id);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
+  s = find_session (ID);
   if (s)
     {
       omp_set_lock (&s->lock);
@@ -741,9 +770,9 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       */
 
       syslog (LOG_INFO,
-              "new_session auth=%d session id=%d ibuf=%s obuf=%s opipe=%s con=%p",
+              "new_session auth=%d session id=%s ibuf=%s obuf=%s opipe=%s con=%p",
               s->auth, s->sessionid, s->ibuf, s->obuf, s->opipe, s->con);
-      snprintf (buf, MAX_VARLEN, "%d", s->sessionid);
+      snprintf (buf, MAX_VARLEN, "%s", s->sessionid);
       respond (conn, plain, 200, strlen (buf), buf);
     }
   else
@@ -782,7 +811,7 @@ debug (struct mg_connection *conn)
   for (j = 0; j < MAX_SESSIONS; ++j)
     {
       l =
-        snprintf (p, k, "j=%d id=%d a=%d p=%s\n", j, sessions[j].sessionid,
+        snprintf (p, k, "j=%d id=%s a=%d p=%s\n", j, sessions[j].sessionid,
                   sessions[j].available, sessions[j].opipe);
       k = k - l;
       if (k <= 0)
@@ -805,11 +834,12 @@ debug (struct mg_connection *conn)
 void
 readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k, n, pl, l;
+  int k, n, pl, l;
   session *s;
   struct pollfd pfd;
   char *buf;
   char var[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   struct stat st;
   if (!ri->query_string)
     {
@@ -819,9 +849,8 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   syslog (LOG_INFO, "readbytes");
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var, MAX_VARLEN);
-  id = atoi (var);
-  s = find_session (id);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
+  s = find_session (ID);
   if (!s)
     {
       syslog (LOG_INFO, "readbytes session error");
@@ -856,10 +885,10 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
   n = atoi (var);
   if (n < 1)
     {
-      syslog (LOG_INFO, "readbytes id=%d returning entire buffer", id);
+      syslog (LOG_INFO, "readbytes id=%s returning entire buffer", ID);
       mg_send_file (conn, s->obuf);
       omp_unset_lock (&s->lock);
-      syslog (LOG_INFO, "readbytes id=%d done", id);
+      syslog (LOG_INFO, "readbytes id=%s done", ID);
       return;
     }
   if (n > MAX_RETURN_BYTES)
@@ -922,13 +951,14 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 readlines (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k, n, pl;
+  int k, n, pl;
   ssize_t l;
   size_t m, t, v;
   session *s;
   char *lbuf, *buf, *p, *tmp;
   struct pollfd pfd;
   char var[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   syslog (LOG_INFO, "readlines");
   if (!ri->query_string)
     {
@@ -937,9 +967,8 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var, MAX_VARLEN);
-  id = atoi (var);
-  s = find_session (id);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
+  s = find_session (ID);
   if (!s)
     {
       respond (conn, plain, 404, 0, NULL);
@@ -1085,13 +1114,14 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int id, k, rel = 0, stream = 0, compression = -1;
+  int k, rel = 0, stream = 0, compression = -1;
   ShimQueryID q;
   session *s;
   char var[MAX_VARLEN];
   char buf[MAX_VARLEN];
   char save[MAX_VARLEN];
   char SERR[MAX_VARLEN];
+  char ID[SESSIONID_LEN];
   char USER[MAX_VARLEN];
   char PASS[MAX_VARLEN];
   char *qrybuf, *qry, *prefix;
@@ -1105,8 +1135,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   k = strlen (ri->query_string);
-  mg_get_var (ri->query_string, k, "id", var, MAX_VARLEN);
-  id = atoi (var);
+  mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
   memset (var, 0, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "release", var, MAX_VARLEN);
   if (strlen (var) > 0)
@@ -1116,11 +1145,11 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   memset (var, 0, MAX_VARLEN);
-  syslog (LOG_INFO, "execute_query for session id %d", id);
-  s = find_session (id);
+  syslog (LOG_INFO, "execute_query for session id %s", ID);
+  s = find_session (ID);
   if (!s)
     {
-      syslog (LOG_ERR, "execute_query error Invalid session ID %d", id);
+      syslog (LOG_ERR, "execute_query error Invalid session ID %s", ID);
       respond (conn, plain, 404, strlen ("Invalid session ID"),
                "Invalid session ID");
       return;                   // check for valid session
@@ -1195,7 +1224,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   int status;
   if (!s->con)
     {
-      syslog (LOG_INFO, "execute_query %d scidbconnect", id);
+      syslog (LOG_INFO, "execute_query %s scidbconnect", ID);
       if(s->auth == SCIDB_AUTHENTICATED && strlen (USER) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
@@ -1205,7 +1234,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, NULL, NULL, &status);
         }
     }
-  syslog (LOG_INFO, "execute_query %d user %s s->con = %p %s", id, USER, s->con, qry);
+  syslog (LOG_INFO, "execute_query %s user %s s->con = %p %s", ID, USER, s->con, qry);
   if (!s->con)
     {
       free (qry);
@@ -1216,7 +1245,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_unset_lock (&s->lock);
       return;
     }
-  syslog (LOG_INFO, "execute_query %d connected", id);
+  syslog (LOG_INFO, "execute_query %s connected", ID);
 
   if (prefix) // 1 or more statements to run first
     {
@@ -1230,7 +1259,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
              last = 1;
            else
              *qend = 0;      //simulate null-termination
-           syslog (LOG_INFO, "execute_query %d running prefix", id);
+           syslog (LOG_INFO, "execute_query %s running prefix", ID);
            prepare_query (&pq, s->con, qstart, 1, SERR);
            q = pq.queryid;
            if (q.queryid < 1 || !pq.queryresult)
@@ -1291,7 +1320,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_unset_lock (&s->lock);
       return;
     }
-  syslog (LOG_INFO, "execute_query id=%d scidb queryid = %llu.%llu", id,
+  syslog (LOG_INFO, "execute_query id=%s scidb queryid = %llu.%llu", ID,
           q.coordinatorid, q.queryid);
 /* Set the queryID for potential future cancel event.
  * The time flag is set to a future value to prevent get_session from
@@ -1328,15 +1357,15 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   free (qry);
   free (qrybuf);
   free (prefix);
-  syslog (LOG_INFO, "execute_query %d done", s->sessionid);
+  syslog (LOG_INFO, "execute_query %s done", s->sessionid);
   if (rel > 0)
     {
-      syslog (LOG_INFO, "execute_query %d disconnecting", s->sessionid);
+      syslog (LOG_INFO, "execute_query %s disconnecting", s->sessionid);
       if (s->con)
         scidbdisconnect (s->con);
       s->con = NULL;
 
-      syslog (LOG_INFO, "execute_query releasing HTTP session %d",
+      syslog (LOG_INFO, "execute_query releasing HTTP session %s",
               s->sessionid);
       cleanup_session (s);
     }
@@ -1533,7 +1562,6 @@ main (int argc, char **argv)
   MAX_SESSIONS = DEFAULT_MAX_SESSIONS;
   SAVE_INSTANCE_ID = DEFAULT_SAVE_INSTANCE_ID;
   USE_AIO = 0;
-  counter = 19;
 
   parse_args (options, argc, argv, &daemonize);
   if (stat (options[5], &check_ssl) < 0)
@@ -1595,7 +1623,7 @@ main (int argc, char **argv)
   for (j = 0; j < MAX_SESSIONS; ++j)
     {
       sessions[j].available = SESSION_AVAILABLE;
-      sessions[j].sessionid = 0;
+      strcpy(sessions[j].sessionid, "NA");
       omp_init_lock (&sessions[j].lock);
     }
 
