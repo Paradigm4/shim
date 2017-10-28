@@ -13,6 +13,8 @@ before_install:
   - docker run
     --name scidb
     --detach
+    --volume /dev/shm
+    --tmpfs /dev/shm
     --volume /home/travis/build/Paradigm4/shim:/shim
     --publish 8080:8080
     rvernica/scidb:${SCIDB_VER}
@@ -25,10 +27,12 @@ install:
     --assume-yes
     --no-install-recommends
     bc
+    busybox-syslogd
     curl
   - docker exec scidb ln --symbolic
     /opt/scidb/16.9/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim
+  - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
 
 script:
   - docker exec scidb /shim/tests/run-all.sh
