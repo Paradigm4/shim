@@ -35,7 +35,7 @@ install:
   - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
 
 script:
-  - docker exec scidb /shim/tests/run-all.sh
+  - docker exec scidb /shim/tests/0_run_all.sh
 
 after_failure:
   - docker logs scidb
