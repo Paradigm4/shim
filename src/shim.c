@@ -65,7 +65,7 @@
 #define SCIDB_AUTHENTICATED 2
 
 // characters allowed in session IDs
-char SESSIONID_CHARSET[] = "01234567890abcdefghijklmnopqrstuvwxyz";
+char SESSIONID_CHARSET[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 /* A session consists of client I/O buffers, and an optional SciDB query ID. */
 typedef enum
