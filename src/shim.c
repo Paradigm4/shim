@@ -89,7 +89,6 @@ typedef struct
   void *con;                    // SciDB context
   time_t time;                  // Time value to help decide on orphan sessions
   available_t available;        // 1 -> available, 0 -> not available
-  int auth;                     // 0 -> none, 1 -> digest, 2 -> scidb
 } session;
 
 /*
@@ -711,26 +710,6 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
     }
 
-/* Check authentication.
- * 1. First check for digest authentication
- */
-  int auth;
-  if (mg_get_basic_auth (conn) == 1)
-    {
-      syslog (LOG_INFO, "new_session with digest auth");
-      auth = 1;                 /* digest authenticated */
-    }
-  else if (!ri->is_ssl)
-    {
-      syslog (LOG_INFO, "new_session no auth");
-      auth = 1;                 /* no authentication (non-TLS) */
-    }
-  else
-    {
-      syslog (LOG_INFO, "new_session TLS + optional scidb auth");
-      auth = SCIDB_AUTHENTICATED;       /* Use SciDB authentication */
-    }
-
   int j = get_session ();
   syslog (LOG_INFO, "new_session %d", j);
   if (j > -1)
@@ -738,9 +717,7 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       session *s = &sessions[j];
       int status;
 
-      s->auth = auth;
-
-      if(s->auth == SCIDB_AUTHENTICATED && strlen (USER) > 0)
+      if(strlen (USER) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
 
@@ -770,8 +747,8 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       */
 
       syslog (LOG_INFO,
-              "new_session auth=%d session id=%s ibuf=%s obuf=%s opipe=%s con=%p",
-              s->auth, s->sessionid, s->ibuf, s->obuf, s->opipe, s->con);
+              "new_session session id=%s ibuf=%s obuf=%s opipe=%s con=%p",
+              s->sessionid, s->ibuf, s->obuf, s->opipe, s->con);
       snprintf (buf, MAX_VARLEN, "%s", s->sessionid);
       respond (conn, plain, 200, strlen (buf), buf);
     }
@@ -1225,7 +1202,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!s->con)
     {
       syslog (LOG_INFO, "execute_query %s scidbconnect", ID);
-      if(s->auth == SCIDB_AUTHENTICATED && strlen (USER) > 0)
+      if(strlen (USER) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
         }
