@@ -1,4 +1,3 @@
-sudo: required
 
 language: generic
 
@@ -15,7 +14,7 @@ before_install:
     --detach
     --volume /dev/shm
     --tmpfs /dev/shm
-    --volume /home/travis/build/Paradigm4/shim:/shim
+    --volume `pwd`:/shim
     --publish 8080:8080
     rvernica/scidb:${SCIDB_VER}
   - while ! curl http://localhost:8080/version; do sleep 1; done
@@ -31,11 +30,11 @@ install:
     curl
   - docker exec scidb ln --symbolic
     /opt/scidb/16.9/lib/libscidbclient.so /lib/
-  - docker exec scidb make --directory /shim
+  - docker exec scidb make --directory /shim install
   - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
 
 script:
-  - docker exec scidb /shim/tests/0_run_all.sh
+  - docker exec scidb make --directory /shim test
 
 after_failure:
   - docker logs scidb
