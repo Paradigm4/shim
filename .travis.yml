@@ -1,5 +1,7 @@
+language: python
 
-language: generic
+python:
+  - "3.6"
 
 env: SCIDB_VER=16.9
 
@@ -32,9 +34,13 @@ install:
     /opt/scidb/16.9/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim install
   - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
+  - pip install --upgrade -r tests/pytest/requirements.txt
 
 script:
   - docker exec scidb make --directory /shim test
+  - docker exec scidb /shim/shim
+  - pytest tests/pytest/test_sessions.py
+  - pytest -n 10 tests/pytest/test_sessions_multi.py
 
 after_failure:
   - docker logs scidb
