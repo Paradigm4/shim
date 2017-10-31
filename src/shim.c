@@ -359,7 +359,7 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
         {
 // Establish a new SciDB context used to issue the cancel query.
           int status;
-          if (strlen(USER) > 0)
+          if (strlen(USER) > 0 && strlen(PASS) > 0)
             {
               can_con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
             }
@@ -717,7 +717,7 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       session *s = &sessions[j];
       int status;
 
-      if(strlen (USER) > 0)
+      if(strlen (USER) > 0 && strlen(PASS) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
 
@@ -1202,7 +1202,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!s->con)
     {
       syslog (LOG_INFO, "execute_query %s scidbconnect", ID);
-      if(strlen (USER) > 0)
+      if(strlen (USER) > 0 && strlen(PASS) > 0)
         {
           s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
         }
