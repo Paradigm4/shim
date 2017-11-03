@@ -154,7 +154,7 @@ test12: shim
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/post_upload.sh
 
 test13: shim
-	@echo "cache test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cache.sh"
+	@echo "post upload test session"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/post_upload_session.sh
 
-test: test0 test1 test2 test3 test4 test9 test10 test12
+test: test0 test1 test2 test3 test4 test9 test10 test12 test13

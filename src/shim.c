@@ -618,7 +618,7 @@ post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       omp_set_lock (&s->lock);
       s->time = time (NULL) + WEEK;     // Upload should take less than a week!
-      k = mg_post_upload (conn, s->ibuf, 1, 0);
+      k = mg_post_upload (conn, s->ibuf, 0, 0);
       if (k < 1)
         {
           time (&s->time);
