@@ -1136,9 +1136,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       syslog (LOG_ERR, "execute_query error out of memory");
       respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      omp_set_lock (&s->lock);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
+      //omp_set_lock (&s->lock);
+      //cleanup_session (s);
+      //omp_unset_lock (&s->lock);
       return;
     }
   qry = (char *) malloc (k + MAX_VARLEN);
@@ -1147,9 +1147,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qrybuf);
       syslog (LOG_ERR, "execute_query error out of memory");
       respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      omp_set_lock (&s->lock);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
+      //omp_set_lock (&s->lock);
+      //cleanup_session (s);
+      //omp_unset_lock (&s->lock);
       return;
     }
   prefix = (char*) malloc (k);
@@ -1159,9 +1159,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qry);
       syslog (LOG_ERR, "execute_query error out of memory");
       respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      omp_set_lock (&s->lock);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
+      //omp_set_lock (&s->lock);
+      //cleanup_session (s);
+      //omp_unset_lock (&s->lock);
     }
   mg_get_var (ri->query_string, k, "prefix", prefix, k);
   if (strlen(prefix) == 0)
@@ -1218,7 +1218,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qrybuf);
       free (prefix);
       respond_to_connection_error(conn, status);
-      cleanup_session (s);
+      //cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1246,10 +1246,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (prefix);
                syslog (LOG_ERR, "execute_query error on prefix %s", SERR);
                respond (conn, plain, 500, strlen (SERR), SERR);
-               if (s->con)
-                 scidbdisconnect (s->con);
-               s->con = NULL;
-               cleanup_session (s);
+               //if (s->con)
+               //  scidbdisconnect (s->con);
+               //s->con = NULL;
+               //cleanup_session (s);
                omp_unset_lock (&s->lock);
                return;
              }
@@ -1268,10 +1268,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (prefix);
                syslog (LOG_ERR, "execute_prepared_query error on prefix %s", SERR);
                respond (conn, plain, 500, strlen (SERR), SERR);
-               if (s->con)
-                 scidbdisconnect (s->con);
-               s->con = NULL;
-               cleanup_session (s);
+               //if (s->con)
+               //  scidbdisconnect (s->con);
+               //s->con = NULL;
+               //cleanup_session (s);
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1290,10 +1290,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (prefix);
       syslog (LOG_ERR, "execute_query error %s", SERR);
       respond (conn, plain, 500, strlen (SERR), SERR);
-      if (s->con)
-        scidbdisconnect (s->con);
-      s->con = NULL;
-      cleanup_session (s);
+      //if (s->con)
+      //  scidbdisconnect (s->con);
+      //s->con = NULL;
+      //cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1321,10 +1321,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       syslog (LOG_ERR, "execute_prepared_query error %s", SERR);
       if (!stream)
         respond (conn, plain, 500, strlen (SERR), SERR);
-      if (s->con)
-        scidbdisconnect (s->con);
-      s->con = NULL;
-      cleanup_session (s);
+      //if (s->con)
+      //  scidbdisconnect (s->con);
+      //s->con = NULL;
+      //cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
