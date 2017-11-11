@@ -32,6 +32,16 @@ echo $HTTP_AUTH > $SHIM_DIR/wwwroot/.htpasswd
 sleep 1
 
 
+## 1. Cancel: no session id
+res=$($CURL "$SHIM_URL/cancel")
+test "$res" == "400"
+
+
+## 2. Cancel: invalid session id
+res=$($CURL "$SHIM_URL/cancel?id=INVALID")
+test "$res" == "404"
+
+
 ## Get session
 res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
 test "$res" == "200"
@@ -45,7 +55,7 @@ $CURL "$SHIM_URL/execute_query?id=$ID&query=$DELAY&save=csv" \
 sleep 1
 
 
-## Cancel query
+## 3. Cancel: OK
 res=$($CURL "$SHIM_URL/cancel?id=$ID")
 test "$res" == "200"
 
