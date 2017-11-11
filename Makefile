@@ -141,6 +141,10 @@ test5: shim
 	@echo "TLS with SciDB authentication"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls_scidbauth.sh
 
+test6: shim
+	@echo "cancel test"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cancel.sh
+
 test9: shim
 	@echo "readbytes test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/readbytes.sh
