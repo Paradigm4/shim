@@ -161,4 +161,4 @@ test13: shim
 	@echo "post upload test session"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/post_upload_session.sh
 
-test: test0 test1 test2 test3 test4 test9 test10 test12 test13
+test: test0 test1 test2 test3 test4 test5 test6 test9 test10 test12 test13
