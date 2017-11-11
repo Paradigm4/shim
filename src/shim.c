@@ -1246,10 +1246,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (prefix);
                syslog (LOG_ERR, "execute_query error on prefix %s", SERR);
                respond (conn, plain, 500, strlen (SERR), SERR);
-               //if (s->con)
-               //  scidbdisconnect (s->con);
-               //s->con = NULL;
-               //cleanup_session (s);
                omp_unset_lock (&s->lock);
                return;
              }
@@ -1268,10 +1264,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (prefix);
                syslog (LOG_ERR, "execute_prepared_query error on prefix %s", SERR);
                respond (conn, plain, 500, strlen (SERR), SERR);
-               //if (s->con)
-               //  scidbdisconnect (s->con);
-               //s->con = NULL;
-               //cleanup_session (s);
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1290,10 +1282,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (prefix);
       syslog (LOG_ERR, "execute_query error %s", SERR);
       respond (conn, plain, 500, strlen (SERR), SERR);
-      //if (s->con)
-      //  scidbdisconnect (s->con);
-      //s->con = NULL;
-      //cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1321,10 +1309,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       syslog (LOG_ERR, "execute_prepared_query error %s", SERR);
       if (!stream)
         respond (conn, plain, 500, strlen (SERR), SERR);
-      //if (s->con)
-      //  scidbdisconnect (s->con);
-      //s->con = NULL;
-      //cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
