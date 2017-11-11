@@ -86,7 +86,7 @@ typedef struct
   char *ibuf;                    // input buffer name
   char *obuf;                    // output (file) buffer name ////
   char *opipe;                   // output pipe name
-  void *con;                     // SciDB context
+  void *scidb[2];                // SciDB context
   time_t time;                   // Time value to help decide on orphan sessions
   available_t available;         // 1 -> available, 0 -> not available
 } session;
@@ -292,9 +292,14 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
   if (s)
     {
       syslog (LOG_INFO, "release_session %s disconnecting", s->sessionid);
-      if (s->con)
-        scidbdisconnect (s->con);
-      s->con = NULL;
+      for (int i = 0; i < 2; i++)
+        {
+          if (s->scidb[i])
+            {
+              scidbdisconnect (s->scidb[i]);
+              s->scidb[i] = NULL;
+            }
+        }
 
       omp_set_lock (&s->lock);
       cleanup_session (s);
@@ -332,7 +337,6 @@ void
 cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k;
-  void *can_con;
   char var1[MAX_VARLEN];
   char ID[SESSIONID_LEN];
   char SERR[MAX_VARLEN];
@@ -355,37 +359,33 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       syslog (LOG_INFO, "cancel_query session %s queryid %llu.%llu", ID,
               s->qid.coordinatorid, s->qid.queryid);
-      if (s->con)
+      if (s->scidb[1])
         {
-// Establish a new SciDB context used to issue the cancel query.
           int status;
-          if (strlen(USER) > 0 && strlen(PASS) > 0)
-            {
-              can_con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
-            }
-          else
-            {
-              can_con = scidbconnect (SCIDB_HOST, SCIDB_PORT, NULL, NULL, &status);
-            }
-// check for valid context from scidb
-          if (!can_con)
+          s->scidb[1] = scidbconnect (SCIDB_HOST,
+                                      SCIDB_PORT,
+                                      strlen(USER) > 0 ? USER : NULL,
+                                      strlen(PASS) > 0 ? PASS : NULL,
+                                      &status);
+          if (!s->scidb[1])
             {
               respond_to_connection_error(conn, status);
               return;
             }
-          memset (var1, 0, MAX_VARLEN);
-          snprintf (var1, MAX_VARLEN, "cancel(\'%llu.%llu\')",
-                    s->qid.coordinatorid, s->qid.queryid);
-          memset (SERR, 0, MAX_VARLEN);
-          executeQuery (can_con, var1, 1, SERR);
-          syslog (LOG_INFO, "cancel_query %s", SERR);
-          // scidbdisconnect (can_con);
         }
+      memset (var1, 0, MAX_VARLEN);
+      snprintf (var1, MAX_VARLEN, "cancel(\'%llu.%llu\')",
+                s->qid.coordinatorid, s->qid.queryid);
+      memset (SERR, 0, MAX_VARLEN);
+      executeQuery (s->scidb[1], var1, 1, SERR);
+      syslog (LOG_INFO, "cancel_query %s", SERR);
       time (&s->time);
       respond (conn, plain, 200, 0, NULL);
     }
   else
-    respond (conn, plain, 404, 0, NULL);        // not found
+    {
+      respond (conn, plain, 404, 0, NULL);        // not found
+    }
 }
 
 
@@ -435,6 +435,10 @@ init_session (session * s)
   snprintf (s->ibuf, PATH_MAX, "%s/shim_input_buf_XXXXXX", TMPDIR);
   snprintf (s->obuf, PATH_MAX, "%s/shim_output_buf_XXXXXX", TMPDIR);
   snprintf (s->opipe, PATH_MAX, "%s/shim_output_pipe_XXXXXX", TMPDIR);
+  for (int i = 0; i < 2; i++)
+    {
+      s->scidb[i] = NULL;
+    }
 // Set up the input buffer
   fd = mkstemp (s->ibuf);
 // XXX We need to make it so that whoever runs scidb can R/W to this file.
@@ -715,14 +719,23 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
   if (j > -1)
     {
       session *s = &sessions[j];
-      int status;
 
-      if(strlen (USER) > 0 && strlen(PASS) > 0)
+      for (int i = 0; i < 2; i++)
         {
-          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
-
-          if (!s->con)
+          int status;
+          s->scidb[i] = scidbconnect (SCIDB_HOST,
+                                      SCIDB_PORT,
+                                      strlen(USER) > 0 ? USER : NULL,
+                                      strlen(PASS) > 0 ? PASS : NULL,
+                                      &status);
+          syslog (LOG_INFO,
+                  "%p %d %lu %lu", s->scidb[i], status, strlen(USER), strlen(PASS));
+          if (!s->scidb[i] &&
+              strlen(USER) > 0 &&
+              strlen(PASS) > 0)
             {
+              // Error only if credentials are provided and connection
+              // failed
               respond_to_connection_error(conn, status);
               cleanup_session (s);
               omp_unset_lock (&s->lock);
@@ -730,25 +743,17 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
             }
         }
       /*
-      We do the following to be backward compattible with the old API,
-      where the USER is provided in /execute or /cancel.
+        Legacy API: USER/PASS provided in /execute or /cancel
 
-      If no USER provided, do not establish SciDB connection. This
-      allows for the SciDB connection to be delayed and for the USER
-      to be provided in /execute or /cancel (old API). If no USER is
-      necessary, the SciDB connection will be established in /execute
-      or /cancel. If authentication is not used, the SciDB connection
-      will be established in /execute or /cancel.
+        Backward compatible:
 
-      else
-        {
-          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, NULL, NULL, &status);
-        }
+        If no USER/PASS are prodeded, do not report an error if the
+        connection fails.
       */
 
       syslog (LOG_INFO,
-              "new_session session id=%s ibuf=%s obuf=%s opipe=%s con=%p",
-              s->sessionid, s->ibuf, s->obuf, s->opipe, s->con);
+              "new_session session id=%s ibuf=%s obuf=%s opipe=%s scidb[0]=%p scidb[1]=%p",
+              s->sessionid, s->ibuf, s->obuf, s->opipe, s->scidb[0], s->scidb[1]);
       snprintf (buf, MAX_VARLEN, "%s", s->sessionid);
       respond (conn, plain, 200, strlen (buf), buf);
     }
@@ -1198,31 +1203,30 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       snprintf (qry, k + MAX_VARLEN, "%s", qrybuf);
     }
 
-  int status;
-  if (!s->con)
+  for (int i = 0; i < 2; i++)
     {
-      syslog (LOG_INFO, "execute_query %s scidbconnect", ID);
-      if(strlen (USER) > 0 && strlen(PASS) > 0)
+      if (!s->scidb[i])
         {
-          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, USER, PASS, &status);
-        }
-      else
-        {
-          s->con = scidbconnect (SCIDB_HOST, SCIDB_PORT, NULL, NULL, &status);
+          syslog (LOG_INFO, "execute_query %s scidbconnect[%d]", ID, i);
+          int status;
+          s->scidb[i] = scidbconnect (SCIDB_HOST,
+                                      SCIDB_PORT,
+                                      strlen(USER) > 0 ? USER : NULL,
+                                      strlen(PASS) > 0 ? PASS : NULL,
+                                      &status);
+          if (!s->scidb[i])
+            {
+              free (qry);
+              free (qrybuf);
+              free (prefix);
+              respond_to_connection_error(conn, status);
+              cleanup_session (s);
+              omp_unset_lock (&s->lock);
+              return;
+            }
         }
     }
-  syslog (LOG_INFO, "execute_query %s user %s s->con = %p %s", ID, USER, s->con, qry);
-  if (!s->con)
-    {
-      free (qry);
-      free (qrybuf);
-      free (prefix);
-      respond_to_connection_error(conn, status);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
-      return;
-    }
-  syslog (LOG_INFO, "execute_query %s connected", ID);
+  syslog (LOG_INFO, "execute_query %s connected user %s s->scidb[0] = %p s->scidb[1] = %p %s", ID, USER, s->scidb[0], s->scidb[1], qry);
 
   if (prefix) // 1 or more statements to run first
     {
@@ -1237,7 +1241,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
            else
              *qend = 0;      //simulate null-termination
            syslog (LOG_INFO, "execute_query %s running prefix", ID);
-           prepare_query (&pq, s->con, qstart, 1, SERR);
+           prepare_query (&pq, s->scidb[0], qstart, 1, SERR);
            q = pq.queryid;
            if (q.queryid < 1 || !pq.queryresult)
              {
@@ -1253,9 +1257,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
            s->time = time (NULL) + WEEK;
            s->stream = stream;
            s->compression = compression;
-           if (s->con)
+           if (s->scidb[0])
              {
-               q = execute_prepared_query (s->con, qstart, &pq, 1, SERR);
+               q = execute_prepared_query (s->scidb[0], qstart, &pq, 1, SERR);
              }
            if (q.queryid < 1)            // something went wrong
              {
@@ -1267,13 +1271,15 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                omp_unset_lock (&s->lock);
                return;
             }
-           if (s->con)
-             completeQuery (q, s->con, SERR);
+           if (s->scidb[0])
+             {
+               completeQuery (q, s->scidb[0], SERR);
+             }
            qstart = qend + 1;
          }
     }
 
-  prepare_query (&pq, s->con, qry, 1, SERR);
+  prepare_query (&pq, s->scidb[0], qry, 1, SERR);
   q = pq.queryid;
   if (q.queryid < 1 || !pq.queryresult)
     {
@@ -1297,9 +1303,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   s->time = time (NULL) + WEEK;
   s->stream = stream;
   s->compression = compression;
-  if (s->con)
+  if (s->scidb[0])
     {
-      q = execute_prepared_query (s->con, qry, &pq, 1, SERR);
+      q = execute_prepared_query (s->scidb[0], qry, &pq, 1, SERR);
     }
   if (q.queryid < 1)            // something went wrong
     {
@@ -1312,8 +1318,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_unset_lock (&s->lock);
       return;
     }
-  if (s->con)
-    completeQuery (q, s->con, SERR);
+  if (s->scidb[0])
+    completeQuery (q, s->scidb[0], SERR);
 
   free (qry);
   free (qrybuf);
@@ -1322,10 +1328,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   if (rel > 0)
     {
       syslog (LOG_INFO, "execute_query %s disconnecting", s->sessionid);
-      if (s->con)
-        scidbdisconnect (s->con);
-      s->con = NULL;
-
+      for (int i = 0; i < 2; i++)
+        {
+          if (s->scidb[i])
+            {
+              scidbdisconnect (s->scidb[i]);
+              s->scidb[i] = NULL;
+            }
+        }
       syslog (LOG_INFO, "execute_query releasing HTTP session %s",
               s->sessionid);
       cleanup_session (s);
