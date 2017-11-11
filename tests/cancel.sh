@@ -11,7 +11,7 @@ HTTP_AUTH=homer:elmo
 SHIM_DIR=$(mktemp --directory)
 CURL="curl --digest --user $HTTP_AUTH --write-out %{http_code} --silent"
 SHIM_URL="http://$HOST:$PORT"
-# SCIDB_AUTH="username=root&password=Paradigm4"
+SCIDB_AUTH="user=root&password=Paradigm4"
 DELAY="build(<x:int64>\\[i=0:0\\],sleep(2))"
 
 set -o errexit
