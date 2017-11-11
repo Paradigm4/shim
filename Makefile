@@ -1,4 +1,4 @@
-ifeq ($(SCIDB),) 
+ifeq ($(SCIDB),)
   X := $(shell which scidb 2>/dev/null)
   ifneq ($(X),)
     X := $(shell dirname ${X})
@@ -57,7 +57,7 @@ help:
 	@echo "Other tests are available. Read the contents of Makefile for details."
 
 install: shim
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	@if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop;fi
 	mkdir -p "$(DESTDIR)$(SCIDB)/bin"
 	cp shim "$(DESTDIR)/$(SCIDB)/bin"
@@ -67,7 +67,7 @@ install: shim
 	@if test -d $(DESTDIR)/usr/local/share/man/man1;then cp man/shim.1 $(DESTDIR)/usr/local/share/man/man1/;fi
 
 uninstall: unservice
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example:\n\nmake SCIDB=/opt/scidb/13.3 uninstall"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example:\n\nmake SCIDB=/opt/scidb/13.3 uninstall"; exit 1; fi
 	- @if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop;fi
 	rm -f "$(SCIDB)/bin/shim"
 	rm -rf /var/lib/shim
@@ -88,7 +88,7 @@ unservice:
 
 deb-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
 	mkdir -p pkgroot/etc/init.d
@@ -102,7 +102,7 @@ deb-pkg: shim
 
 rpm-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
 	mkdir -p pkgroot/etc/init.d
