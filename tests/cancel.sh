@@ -1,28 +1,53 @@
 #!/bin/bash
-# Test canceling a query
-# API /cancel
 
-host=localhost
-port=8088
-td=$(mktemp -d)
+# Test /cancel endpoint
 
-function fail {
-  echo "FAIL"
-  rm -rf $td
-  kill -9 %1
-  exit 1
+HOST=localhost
+PORT=8088
+HTTP_AUTH=homer:elmo
+
+SHIM_DIR=$(mktemp --directory)
+CURL_AUTH="--digest --user $HTTP_AUTH"
+SHIM_URL="http://$HOST:$PORT"
+# SCIDB_AUTH="username=root&password=Paradigm4"
+DELAY="build(<x:int64>\\[i=0:0\\],sleep(2))"
+
+set -o errexit
+
+function cleanup {
+    ## Cleanup
+    kill -9 %1
+    rm --recursive $SHIM_DIR
 }
 
-mkdir -p $td/wwwroot
-echo "homer:elmo" > $td/wwwroot/.htpasswd
-./shim -p $port -r $td/wwwroot  -f &
+trap cleanup EXIT
+
+
+## Setup
+
+mkdir --parents $SHIM_DIR/wwwroot
+echo $HTTP_AUTH > $SHIM_DIR/wwwroot/.htpasswd
+./shim -p $PORT -r $SHIM_DIR/wwwroot -f &
 sleep 1
 
-id=$(curl -f -s --digest --user homer:elmo "http://${host}:${port}/new_session?username=root&password=Paradigm4" | sed -e "s/.*//")
-curl -f -s --digest --user homer:elmo "http://${host}:${port}/execute_query?id=${id}&query=build(<x:int64>\\[i=0:0\\],sleep(2))&save=csv" &
-sleep 1
-curl -f -s --digest --user homer:elmo "http://${host}:${port}/cancel?id=${id}" >/dev/null || fail
 
-echo "OK"
-rm -rf $td
-kill -9 %1 >/dev/null 2>&1
+## Get session
+ID=$(curl --silent $CURL_AUTH                 \
+          "$SHIM_URL/new_session?$SCIDB_AUTH" \
+         | sed -e "s/.*//")
+
+
+## Run query
+curl $CURL_AUTH                                             \
+     "$SHIM_URL/execute_query?id=$ID&query=$DELAY&save=csv" \
+    || true                                                 \
+    &
+sleep 1
+
+
+## Cancel query
+curl $CURL_AUTH "$SHIM_URL/cancel?id=$ID"
+
+
+echo "PASS"
+exit 0
