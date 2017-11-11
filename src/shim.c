@@ -76,19 +76,19 @@ typedef enum
 typedef struct
 {
   omp_lock_t lock;
-  char sessionid[SESSIONID_LEN];// session identifier
-  ShimQueryID qid;              // SciDB query identifier
-  int pd;                       // output buffer file descrptor
-  FILE *pf;                     //   and FILE pointer
-  int stream;                   // non-zero if output streaming enabled (DISABLED)
-  int save;                     // non-zero if output is to be saved/streamed
-  int compression;              // gzip compression level for stream
-  char *ibuf;                   // input buffer name
-  char *obuf;                   // output (file) buffer name ////
-  char *opipe;                  // output pipe name
-  void *con;                    // SciDB context
-  time_t time;                  // Time value to help decide on orphan sessions
-  available_t available;        // 1 -> available, 0 -> not available
+  char sessionid[SESSIONID_LEN]; // session identifier
+  ShimQueryID qid;               // SciDB query identifier
+  int pd;                        // output buffer file descrptor
+  FILE *pf;                      //   and FILE pointer
+  int stream;                    // non-zero if output streaming enabled (DISABLED)
+  int save;                      // non-zero if output is to be saved/streamed
+  int compression;               // gzip compression level for stream
+  char *ibuf;                    // input buffer name
+  char *obuf;                    // output (file) buffer name ////
+  char *opipe;                   // output pipe name
+  void *con;                     // SciDB context
+  time_t time;                   // Time value to help decide on orphan sessions
+  available_t available;         // 1 -> available, 0 -> not available
 } session;
 
 /*
