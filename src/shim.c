@@ -1348,12 +1348,30 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 
 
 void
-getlog (struct mg_connection *conn)
+get_log (struct mg_connection *conn)
 {
-  syslog (LOG_INFO, "getlog");
-  system
-    ("tail -n 1555 `ps axu | grep SciDB | grep \"\\/000\\/0\"  | grep SciDB | head -n 1 | sed -e \"s/SciDB-000.*//\" | sed -e \"s/.* \\//\\//\"`/scidb.log > /tmp/.scidb.log");
-  mg_send_file (conn, "/tmp/.scidb.log");
+  syslog (LOG_INFO, "get_log");
+
+  char path[MAX_VARLEN];
+  snprintf(path,
+           MAX_VARLEN,
+           "%s/.scidb.log",
+           TMPDIR);
+
+  char cmd[MAX_VARLEN];
+  snprintf(cmd,
+           MAX_VARLEN,
+           "tail -n 1555 "
+           "  `ps axu "
+           "   | grep SciDB "
+           "   | grep \"\\/0\\/0\" "
+           "   | head -n 1 "
+           "   | sed -e \"s/SciDB-0-0.*//\" "
+           "   | sed -e \"s/.* \\//\\//\"`/scidb.log "
+           " > %s", path);
+  system (cmd);
+
+  mg_send_file (conn, path);
 }
 
 /* Mongoose generic begin_request callback; we dispatch URIs to their
@@ -1400,7 +1418,7 @@ begin_request_handler (struct mg_connection *conn)
 //      else if (!strcmp (ri->uri, "/start_scidb"))
 //        startscidb (conn, ri);
   else if (!strcmp (ri->uri, "/get_log"))
-    getlog (conn);
+    get_log (conn);
   else
     {
 // fallback to http file server
