@@ -62,7 +62,6 @@
 #define WEEK 604800             // One week in seconds
 #define DEFAULT_TIMEOUT 60      // Timeout before a session is declared
                                 // orphaned and available to reap (seconds)
-#define SCIDB_AUTHENTICATED 2
 
 // characters allowed in session IDs
 char SESSIONID_CHARSET[] = "0123456789abcdefghijklmnopqrstuvwxyz";
