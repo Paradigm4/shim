@@ -146,8 +146,8 @@ test6: shim
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cancel.sh
 
 test9: shim
-	@echo "readbytes test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/readbytes.sh
+	@echo "read_bytes test"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read_bytes.sh
 
 test10: shim
 	@echo "file upload test"
