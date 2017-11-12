@@ -18,7 +18,7 @@ set -o errexit
 
 function cleanup {
     ## Cleanup
-    kill -9 %1
+    kill -s SIGKILL %1
     rm --recursive $SHIM_DIR
 }
 
