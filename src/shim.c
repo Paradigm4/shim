@@ -328,12 +328,12 @@ void respond_to_connection_error(struct mg_connection *conn, int connection_stat
       }
 }
 
-/* Note: cancel_query does not trigger a cleanup_session for the session
+/* Note: cancel does not trigger a cleanup_session for the session
  * corresponding to the query. The client that initiated the original query is
  * still responsible for session cleanup.
  */
 void
-cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
+cancel (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k;
   char var1[MAX_VARLEN];
@@ -344,7 +344,7 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!ri->query_string)
     {
       respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "cancel_query error invalid http query");
+      syslog (LOG_ERR, "cancel error invalid http query");
       return;
     }
   k = strlen (ri->query_string);
@@ -356,7 +356,7 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
   session *s = find_session (ID);
   if (s && s->qid.queryid > 0)
     {
-      syslog (LOG_INFO, "cancel_query session %s queryid %llu.%llu", ID,
+      syslog (LOG_INFO, "cancel session %s queryid %llu.%llu", ID,
               s->qid.coordinatorid, s->qid.queryid);
       if (s->scidb[1])
         {
@@ -377,7 +377,7 @@ cancel_query (struct mg_connection *conn, const struct mg_request_info *ri)
                 s->qid.coordinatorid, s->qid.queryid);
       memset (SERR, 0, MAX_VARLEN);
       executeQuery (s->scidb[1], var1, 1, SERR);
-      syslog (LOG_INFO, "cancel_query %s", SERR);
+      syslog (LOG_INFO, "cancel %s", SERR);
       time (&s->time);
       respond (conn, plain, 200, 0, NULL);
     }
@@ -602,7 +602,7 @@ logout (struct mg_connection *conn)
  * 404 session not found
  */
 void
-post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
+upload (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k;
   session *s;
@@ -651,7 +651,7 @@ post_upload (struct mg_connection *conn, const struct mg_request_info *ri)
  * 404 session not found
  */
 void
-upload (struct mg_connection *conn, const struct mg_request_info *ri)
+upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k;
   session *s;
@@ -660,7 +660,7 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!ri->query_string)
     {
       respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_INFO, "upload error invalid http query");
+      syslog (LOG_INFO, "upload_file error invalid http query");
       return;
     }
   k = strlen (ri->query_string);
@@ -813,7 +813,7 @@ debug (struct mg_connection *conn)
  * went wrong.
  */
 void
-readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
+read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k, n, pl, l;
   session *s;
@@ -825,23 +825,23 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!ri->query_string)
     {
       respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "readbytes error invalid http query");
+      syslog (LOG_ERR, "read_bytes error invalid http query");
       return;
     }
-  syslog (LOG_INFO, "readbytes");
+  syslog (LOG_INFO, "read_bytes");
   k = strlen (ri->query_string);
   mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
   s = find_session (ID);
   if (!s)
     {
-      syslog (LOG_INFO, "readbytes session error");
+      syslog (LOG_INFO, "read_bytes session error");
       respond (conn, plain, 404, 0, NULL);
       return;
     }
   if (!s->save)
     {
       respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "readlines query output not saved");
+      syslog (LOG_ERR, "read_bytes query output not saved");
       return;
     }
   omp_set_lock (&s->lock);
@@ -854,7 +854,7 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
 
       if (s->pd < 1)
         {
-          syslog (LOG_ERR, "readbytes error opening output buffer");
+          syslog (LOG_ERR, "read_bytes error opening output buffer");
           respond (conn, plain, 500, 0, NULL);
           omp_unset_lock (&s->lock);
           return;
@@ -866,10 +866,10 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
   n = atoi (var);
   if (n < 1)
     {
-      syslog (LOG_INFO, "readbytes id=%s returning entire buffer", ID);
+      syslog (LOG_INFO, "read_bytes id=%s returning entire buffer", ID);
       mg_send_file (conn, s->obuf);
       omp_unset_lock (&s->lock);
-      syslog (LOG_INFO, "readbytes id=%s done", ID);
+      syslog (LOG_INFO, "read_bytes id=%s done", ID);
       return;
     }
   if (n > MAX_RETURN_BYTES)
@@ -887,8 +887,8 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
   buf = (char *) malloc (n);
   if (!buf)
     {
-      syslog (LOG_ERR, "readbytes out of memory");
-      respond (conn, plain, 507, 0, NULL);
+      syslog (LOG_ERR, "read_bytes out of memory");
+      respond (conn, plain, 500, 0, NULL);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -904,7 +904,7 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
     }
 
   l = (int) read (s->pd, buf, n);
-  syslog (LOG_INFO, "readbytes  read %d n=%d", l, n);
+  syslog (LOG_INFO, "read_bytes  read %d n=%d", l, n);
   if (l < 1)                    // EOF or error
     {
       free (buf);
@@ -930,7 +930,7 @@ readbytes (struct mg_connection *conn, const struct mg_request_info *ri)
  * went wrong or end of file.
  */
 void
-readlines (struct mg_connection *conn, const struct mg_request_info *ri)
+read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   int k, n, pl;
   ssize_t l;
@@ -940,11 +940,11 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
   struct pollfd pfd;
   char var[MAX_VARLEN];
   char ID[SESSIONID_LEN];
-  syslog (LOG_INFO, "readlines");
+  syslog (LOG_INFO, "read_lines");
   if (!ri->query_string)
     {
       respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "readlines error invalid http query");
+      syslog (LOG_ERR, "read_lines error invalid http query");
       return;
     }
   k = strlen (ri->query_string);
@@ -953,13 +953,13 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!s)
     {
       respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "readlines error invalid session");
+      syslog (LOG_ERR, "read_lines error invalid session");
       return;
     }
   if (!s->save)
     {
       respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "readlines query output not saved");
+      syslog (LOG_ERR, "read_lines query output not saved");
       return;
     }
 // Retrieve max number of lines to read
@@ -969,13 +969,13 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_set_lock (&s->lock);
   if ((n < 1) || s->stream)
     {
-      syslog (LOG_INFO, "readlines returning entire buffer");
+      syslog (LOG_INFO, "read_lines returning entire buffer");
       mg_send_file (conn, s->obuf);
       omp_unset_lock (&s->lock);
       return;
     }
 // Check to see if output buffer is open for reading
-  syslog (LOG_INFO, "readlines opening buffer");
+  syslog (LOG_INFO, "read_lines opening buffer");
   if (s->pd < 1)
     {
       s->pd = open (s->stream ? s->opipe : s->obuf, O_RDONLY | O_NONBLOCK);
@@ -984,7 +984,7 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
       if (s->pd < 1 || !s->pf)
         {
           respond (conn, plain, 500, 0, NULL);
-          syslog (LOG_ERR, "readlines error opening output buffer");
+          syslog (LOG_ERR, "read_lines error opening output buffer");
           omp_unset_lock (&s->lock);
           return;
         }
@@ -1003,7 +1003,7 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!lbuf)
     {
       respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      syslog (LOG_ERR, "readlines out of memory");
+      syslog (LOG_ERR, "read_lines out of memory");
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1012,7 +1012,7 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       free (lbuf);
       respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      syslog (LOG_ERR, "readlines out of memory");
+      syslog (LOG_ERR, "read_lines out of memory");
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1045,7 +1045,7 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
               free (buf);
               respond (conn, plain, 500, strlen ("Out of memory"),
                        "Out of memory");
-              syslog (LOG_ERR, "readlines out of memory");
+              syslog (LOG_ERR, "read_lines out of memory");
               omp_unset_lock (&s->lock);
               return;
             }
@@ -1063,8 +1063,8 @@ readlines (struct mg_connection *conn, const struct mg_request_info *ri)
   free (lbuf);
   if (t == 0)
     {
-      syslog (LOG_INFO, "readlines EOF");
       respond (conn, plain, 410, 0, NULL);      // gone--i.e. EOF
+      syslog (LOG_INFO, "read_lines EOF");
     }
   else
     respond (conn, plain, 200, t, buf);
@@ -1383,17 +1383,17 @@ begin_request_handler (struct mg_connection *conn)
   else if (!strcmp (ri->uri, "/release_session"))
     release_session (conn, ri, 1);
   else if (!strcmp (ri->uri, "/upload_file"))
-    upload (conn, ri);
+    upload_file (conn, ri);
   else if (!strcmp (ri->uri, "/upload"))
-    post_upload (conn, ri);
+    upload (conn, ri);
   else if (!strcmp (ri->uri, "/read_lines"))
-    readlines (conn, ri);
+    read_lines (conn, ri);
   else if (!strcmp (ri->uri, "/read_bytes"))
-    readbytes (conn, ri);
+    read_bytes (conn, ri);
   else if (!strcmp (ri->uri, "/execute_query"))
     execute_query (conn, ri);
   else if (!strcmp (ri->uri, "/cancel"))
-    cancel_query (conn, ri);
+    cancel (conn, ri);
 // CONTROL API
 //      else if (!strcmp (ri->uri, "/stop_scidb"))
 //        stopscidb (conn, ri);
