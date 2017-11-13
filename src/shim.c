@@ -354,11 +354,11 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
   mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   session *s = find_session (ID);
-  if (s && s->qid.queryid > 0)
+  if (s != NULL && s->qid.queryid > 0)
     {
       syslog (LOG_INFO, "cancel session %s queryid %llu.%llu", ID,
               s->qid.coordinatorid, s->qid.queryid);
-      if (s->scidb[1])
+      if (s->scidb[1] == NULL)
         {
           int status;
           s->scidb[1] = scidbconnect (SCIDB_HOST,
@@ -366,7 +366,7 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
                                       strlen(USER) > 0 ? USER : NULL,
                                       strlen(PASS) > 0 ? PASS : NULL,
                                       &status);
-          if (!s->scidb[1])
+          if (s->scidb[1] == NULL)
             {
               respond_to_connection_error(conn, status);
               return;
