@@ -33,7 +33,7 @@ def test_max_new_sessions(i):
     # Request New -- Fail
     req = requests.get(shim_url(Shim.new_session))
     assert req.status_code == 503
-    assert req.text == ''
+    assert req.text == 'Out of resources'
 
     # Relase One
     req = requests.get(shim_url(Shim.release_session),
@@ -50,7 +50,7 @@ def test_max_new_sessions(i):
     # Request New -- Fail
     req = requests.get(shim_url(Shim.new_session))
     assert req.status_code == 503
-    assert req.text == ''
+    assert req.text == 'Out of resources'
 
     # Release Remaining
     for id in ids[1:]:

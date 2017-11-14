@@ -43,7 +43,7 @@
 #include "client.h"
 
 #define DEFAULT_MAX_SESSIONS 50 // Maximum number of concurrent http sessions
-#define MAX_VARLEN 4096         // Static buffer length for http query params
+#define MAX_VARLEN 4096         // Static buffer length
 #define LCSV_MAX 16384
 #define SESSIONID_LEN 32 + 1    // Length of a session ID
 #ifndef PATH_MAX
@@ -62,6 +62,38 @@
 #define WEEK 604800             // One week in seconds
 #define DEFAULT_TIMEOUT 60      // Timeout before a session is declared
                                 // orphaned and available to reap (seconds)
+
+// -- - HTTP Status Codes - --
+// https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+// -- - HTTP 4xx
+#define HTTP_400_BAD_REQUEST     400
+#define HTTP_401_UNAUTHORIZED    401
+#define HTTP_403_FORBIDDEN       403
+#define HTTP_404_NOT_FOUND       404
+#define HTTP_406_NOT_ACCEPTABLE  406
+#define HTTP_409_CONFLICT        409
+#define HTTP_410_GONE            410
+#define HTTP_416_NOT_SATISFIABLE 416 // Requested Range Not Satisfiable
+// -- - HTTP 5xx
+#define HTTP_500_SERVER_ERROR    500 // Internal Server Error
+#define HTTP_502_BAD_GATEWAY     502
+#define HTTP_503_UNAVAILABLE     503 // Service Unavailable
+
+// -- - HTTP 4xx Error Messages
+#define MSG_ERR_HTTP_400_ARG "HTTP arguments missing"
+#define MSG_ERR_HTTP_400_EFL "Uploaded file is empty"
+#define MSG_ERR_HTTP_401     "SciDB authentication failed"
+#define MSG_ERR_HTTP_404     "Session not found"
+#define MSG_ERR_HTTP_409     "Session has no query"
+#define MSG_ERR_HTTP_410     "Output not saved"
+#define MSG_ERR_HTTP_416     "EOF - range out of bounds"
+// -- - HTTP 5xx Error Messages
+#define MSG_ERR_HTTP_500_OOM "Out of memory"
+#define MSG_ERR_HTTP_500_BUF "Open output buffer failed"
+#define MSG_ERR_HTTP_500_FST "Get file status failed"
+#define MSG_ERR_HTTP_502     "SciDB connection failed"
+#define MSG_ERR_HTTP_503     "Out of resources"
+// -- -
 
 // characters allowed in session IDs
 char SESSIONID_CHARSET[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -278,13 +310,17 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
 {
   int k;
   char ID[SESSIONID_LEN];
-  syslog (LOG_INFO, "release_session");
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "release_session error invalid http query");
+      syslog (LOG_ERR, "release_session: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
+  syslog (LOG_INFO, "release_session");
   k = strlen (ri->query_string);
   mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
   session *s = find_session (ID);
@@ -307,24 +343,36 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
         respond (conn, plain, 200, 0, NULL);
     }
   else if (resp)
-    respond (conn, plain, 404, 0, NULL);        // not found
+    {
+      // not found
+      syslog (LOG_INFO, "release_session: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
+    }
 }
 
 void respond_to_connection_error(struct mg_connection *conn, int connection_status)
 {
     if(connection_status == SHIM_ERROR_AUTHENTICATION)
       {
-        syslog (LOG_ERR, "SciDB authentication error");
-        respond (conn, plain, 401,
-                 strlen ("authentication error"),
-                 "authentication error");
+        syslog (LOG_ERR, "ERROR: %s", MSG_ERR_HTTP_401);
+        respond (conn,
+                 plain,
+                 HTTP_401_UNAUTHORIZED,
+                 strlen (MSG_ERR_HTTP_401),
+                 MSG_ERR_HTTP_401);
       }
     else
       {
-        syslog (LOG_ERR, "could not connect to SciDB");
-        respond (conn, plain, 503,
-             strlen ("Could not connect to SciDB"),
-             "Could not connect to SciDB");
+        syslog (LOG_ERR, "ERROR: %s", MSG_ERR_HTTP_502);
+        respond (conn,
+                 plain,
+                 HTTP_502_BAD_GATEWAY,
+                 strlen (MSG_ERR_HTTP_502),
+                 MSG_ERR_HTTP_502);
       }
 }
 
@@ -343,8 +391,12 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
   char PASS[MAX_VARLEN];
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "cancel error invalid http query");
+      syslog (LOG_ERR, "cancel: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   k = strlen (ri->query_string);
@@ -354,37 +406,52 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
   mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   session *s = find_session (ID);
-  if (s != NULL && s->qid.queryid > 0)
+  if (s == NULL)
     {
-      syslog (LOG_INFO, "cancel session %s queryid %llu.%llu", ID,
-              s->qid.coordinatorid, s->qid.queryid);
+      // not found
+      syslog (LOG_INFO, "cancel: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
+      return;
+    }
+  if (s->qid.queryid <= 0)
+    {
+      syslog (LOG_INFO, "%s: ERROR %s", "cancel", MSG_ERR_HTTP_409);
+      respond (conn,
+               plain,
+               HTTP_409_CONFLICT,
+               strlen (MSG_ERR_HTTP_409),
+               MSG_ERR_HTTP_409);
+      return;
+    }
+
+  syslog (LOG_INFO, "cancel session %s queryid %llu.%llu s->scidb[1] %p", ID,
+          s->qid.coordinatorid, s->qid.queryid, s->scidb[1]);
+  if (s->scidb[1] == NULL)
+    {
+      int status;
+      s->scidb[1] = scidbconnect (SCIDB_HOST,
+                                  SCIDB_PORT,
+                                  strlen (USER) > 0 ? USER : NULL,
+                                  strlen (PASS) > 0 ? PASS : NULL,
+                                  &status);
       if (s->scidb[1] == NULL)
         {
-          int status;
-          s->scidb[1] = scidbconnect (SCIDB_HOST,
-                                      SCIDB_PORT,
-                                      strlen(USER) > 0 ? USER : NULL,
-                                      strlen(PASS) > 0 ? PASS : NULL,
-                                      &status);
-          if (s->scidb[1] == NULL)
-            {
-              respond_to_connection_error(conn, status);
-              return;
-            }
+          respond_to_connection_error(conn, status);
+          return;
         }
-      memset (var1, 0, MAX_VARLEN);
-      snprintf (var1, MAX_VARLEN, "cancel(\'%llu.%llu\')",
-                s->qid.coordinatorid, s->qid.queryid);
-      memset (SERR, 0, MAX_VARLEN);
-      executeQuery (s->scidb[1], var1, 1, SERR);
-      syslog (LOG_INFO, "cancel %s", SERR);
-      time (&s->time);
-      respond (conn, plain, 200, 0, NULL);
     }
-  else
-    {
-      respond (conn, plain, 404, 0, NULL);        // not found
-    }
+  memset (var1, 0, MAX_VARLEN);
+  snprintf (var1, MAX_VARLEN, "cancel(\'%llu.%llu\')",
+            s->qid.coordinatorid, s->qid.queryid);
+  memset (SERR, 0, MAX_VARLEN);
+  executeQuery (s->scidb[1], var1, 1, SERR);
+  syslog (LOG_INFO, "cancel %s", SERR);
+  time (&s->time);
+  respond (conn, plain, 200, 0, NULL);
 }
 
 
@@ -610,8 +677,12 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
   char buf[MAX_VARLEN];
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_INFO, "upload error invalid http query");
+      syslog (LOG_ERR, "upload: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   k = strlen (ri->query_string);
@@ -622,11 +693,16 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_set_lock (&s->lock);
       s->time = time (NULL) + WEEK;     // Upload should take less than a week!
       k = mg_post_upload (conn, s->ibuf, 0, 0);
-      if (k < 1)
+      if (k < 1)                        // Upload size is less that 1 byte
         {
           time (&s->time);
           omp_unset_lock (&s->lock);
-          respond (conn, plain, 400, 0, NULL);  // not found
+          syslog (LOG_INFO, "upload: ERROR %s", MSG_ERR_HTTP_400_EFL);
+          respond (conn,
+                   plain,
+                   HTTP_400_BAD_REQUEST,
+                   strlen (MSG_ERR_HTTP_400_EFL),
+                   MSG_ERR_HTTP_400_EFL);
           return;
         }
       time (&s->time);
@@ -637,7 +713,13 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   else
     {
-      respond (conn, plain, 404, 0, NULL);      // not found
+      // not found
+      syslog (LOG_INFO, "upload: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
     }
   return;
 }
@@ -659,8 +741,12 @@ upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
   char buf[MAX_VARLEN];
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_INFO, "upload_file error invalid http query");
+      syslog (LOG_ERR, "upload_file: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   k = strlen (ri->query_string);
@@ -679,7 +765,13 @@ upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   else
     {
-      respond (conn, plain, 404, 0, NULL);      // not found
+      // not found
+      syslog (LOG_INFO, "upload_file: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
     }
   return;
 }
@@ -724,14 +816,14 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
           int status;
           s->scidb[i] = scidbconnect (SCIDB_HOST,
                                       SCIDB_PORT,
-                                      strlen(USER) > 0 ? USER : NULL,
-                                      strlen(PASS) > 0 ? PASS : NULL,
+                                      strlen (USER) > 0 ? USER : NULL,
+                                      strlen (PASS) > 0 ? PASS : NULL,
                                       &status);
           syslog (LOG_INFO,
-                  "%p %d %lu %lu", s->scidb[i], status, strlen(USER), strlen(PASS));
+                  "%p %d %lu %lu", s->scidb[i], status, strlen (USER), strlen (PASS));
           if (!s->scidb[i] &&
-              strlen(USER) > 0 &&
-              strlen(PASS) > 0)
+              strlen (USER) > 0 &&
+              strlen (PASS) > 0)
             {
               // Error only if credentials are provided and connection
               // failed
@@ -758,7 +850,13 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   else
     {
-      respond (conn, plain, 503, 0, NULL);      // out of resources
+      // out of resources
+      syslog (LOG_ERR, "new_session: ERROR %s", MSG_ERR_HTTP_503);
+      respond (conn,
+               plain,
+               HTTP_503_UNAVAILABLE,
+               strlen (MSG_ERR_HTTP_503),
+               MSG_ERR_HTTP_503);
     }
 }
 
@@ -824,8 +922,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
   struct stat st;
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "read_bytes error invalid http query");
+      syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   syslog (LOG_INFO, "read_bytes");
@@ -834,14 +936,23 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
   s = find_session (ID);
   if (!s)
     {
-      syslog (LOG_INFO, "read_bytes session error");
-      respond (conn, plain, 404, 0, NULL);
+      // not found
+      syslog (LOG_INFO, "read_bytes: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
       return;
     }
   if (!s->save)
     {
-      respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "read_bytes query output not saved");
+      syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_410);
+      respond (conn,
+               plain,
+               HTTP_410_GONE,
+               strlen (MSG_ERR_HTTP_410),
+               MSG_ERR_HTTP_410);
       return;
     }
   omp_set_lock (&s->lock);
@@ -854,8 +965,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
 
       if (s->pd < 1)
         {
-          syslog (LOG_ERR, "read_bytes error opening output buffer");
-          respond (conn, plain, 500, 0, NULL);
+          syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_500_BUF);
+          respond (conn,
+                   plain,
+                   HTTP_500_SERVER_ERROR,
+                   strlen (MSG_ERR_HTTP_500_BUF),
+                   MSG_ERR_HTTP_500_BUF);
           omp_unset_lock (&s->lock);
           return;
         }
@@ -876,8 +991,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
     n = MAX_RETURN_BYTES;
   if (fstat (s->pd, &st) < 0)
     {
-      syslog (LOG_ERR, "fstat error");
-      respond (conn, plain, 507, 0, NULL);
+      syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_500_FST);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_FST),
+               MSG_ERR_HTTP_500_FST);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -887,8 +1006,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
   buf = (char *) malloc (n);
   if (!buf)
     {
-      syslog (LOG_ERR, "read_bytes out of memory");
-      respond (conn, plain, 500, 0, NULL);
+      syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -908,7 +1031,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
   if (l < 1)                    // EOF or error
     {
       free (buf);
-      respond (conn, plain, 416, 0, NULL);
+      syslog (LOG_ERR, "read_bytes: ERROR %s", MSG_ERR_HTTP_416);
+      respond (conn,
+               plain,
+               HTTP_416_NOT_SATISFIABLE,
+               strlen (MSG_ERR_HTTP_416),
+               MSG_ERR_HTTP_416);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -940,11 +1068,14 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   struct pollfd pfd;
   char var[MAX_VARLEN];
   char ID[SESSIONID_LEN];
-  syslog (LOG_INFO, "read_lines");
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, 0, NULL);
-      syslog (LOG_ERR, "read_lines error invalid http query");
+      syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   k = strlen (ri->query_string);
@@ -952,16 +1083,26 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   s = find_session (ID);
   if (!s)
     {
-      respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "read_lines error invalid session");
+      // not found
+      syslog (LOG_INFO, "read_lines: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
       return;
     }
   if (!s->save)
     {
-      respond (conn, plain, 404, 0, NULL);
-      syslog (LOG_ERR, "read_lines query output not saved");
+      syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_410);
+      respond (conn,
+               plain,
+               HTTP_410_GONE,
+               strlen (MSG_ERR_HTTP_410),
+               MSG_ERR_HTTP_410);
       return;
     }
+  syslog (LOG_INFO, "read_lines");
 // Retrieve max number of lines to read
   mg_get_var (ri->query_string, k, "n", var, MAX_VARLEN);
   n = atoi (var);
@@ -983,8 +1124,12 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
         s->pf = fdopen (s->pd, "r");
       if (s->pd < 1 || !s->pf)
         {
-          respond (conn, plain, 500, 0, NULL);
-          syslog (LOG_ERR, "read_lines error opening output buffer");
+          syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_500_BUF);
+          respond (conn,
+                   plain,
+                   HTTP_500_SERVER_ERROR,
+                   strlen (MSG_ERR_HTTP_500_BUF),
+                   MSG_ERR_HTTP_500_BUF);
           omp_unset_lock (&s->lock);
           return;
         }
@@ -1002,8 +1147,12 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   lbuf = (char *) malloc (m);
   if (!lbuf)
     {
-      respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      syslog (LOG_ERR, "read_lines out of memory");
+      syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1011,8 +1160,12 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   if (!buf)
     {
       free (lbuf);
-      respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
-      syslog (LOG_ERR, "read_lines out of memory");
+      syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1043,9 +1196,12 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
             {
               free (lbuf);
               free (buf);
-              respond (conn, plain, 500, strlen ("Out of memory"),
-                       "Out of memory");
-              syslog (LOG_ERR, "read_lines out of memory");
+              syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_500_OOM);
+              respond (conn,
+                       plain,
+                       HTTP_500_SERVER_ERROR,
+                       strlen (MSG_ERR_HTTP_500_OOM),
+                       MSG_ERR_HTTP_500_OOM);
               omp_unset_lock (&s->lock);
               return;
             }
@@ -1061,13 +1217,19 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
       k += 1;
     }
   free (lbuf);
-  if (t == 0)
+  if (t == 0)                   // EOF
     {
-      respond (conn, plain, 410, 0, NULL);      // gone--i.e. EOF
-      syslog (LOG_INFO, "read_lines EOF");
+      syslog (LOG_ERR, "read_lines: ERROR %s", MSG_ERR_HTTP_416);
+      respond (conn,
+               plain,
+               HTTP_416_NOT_SATISFIABLE,
+               strlen (MSG_ERR_HTTP_416),
+               MSG_ERR_HTTP_416);
     }
   else
-    respond (conn, plain, 200, t, buf);
+    {
+      respond (conn, plain, 200, t, buf);
+    }
   free (buf);
   time (&s->time);
   omp_unset_lock (&s->lock);
@@ -1110,9 +1272,12 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 
   if (!ri->query_string)
     {
-      respond (conn, plain, 400, strlen ("Invalid http query"),
-               "Invalid http query");
-      syslog (LOG_ERR, "execute_query error invalid http query string");
+      syslog (LOG_ERR, "execute_query: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   k = strlen (ri->query_string);
@@ -1130,27 +1295,51 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   s = find_session (ID);
   if (!s)
     {
-      syslog (LOG_ERR, "execute_query error Invalid session ID %s", ID);
-      respond (conn, plain, 404, strlen ("Invalid session ID"),
-               "Invalid session ID");
-      return;                   // check for valid session
+      // not found
+      syslog (LOG_INFO, "execute_query: ERROR %s", MSG_ERR_HTTP_404);
+      respond (conn,
+               plain,
+               HTTP_404_NOT_FOUND,
+               strlen (MSG_ERR_HTTP_404),
+               MSG_ERR_HTTP_404);
+      return;
     }
   qrybuf = (char *) malloc (k);
   if (!qrybuf)
     {
-      syslog (LOG_ERR, "execute_query error out of memory");
-      respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
+      syslog (LOG_ERR, "execute_query: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
+      return;
+    }
+  mg_get_var (ri->query_string, k, "query", qrybuf, k);
+  if (strlen (qrybuf) == 0)
+    {
+      free(qrybuf);
+      syslog (LOG_ERR, "execute_query: ERROR %s", MSG_ERR_HTTP_400_ARG);
+      respond (conn,
+               plain,
+               HTTP_400_BAD_REQUEST,
+               strlen (MSG_ERR_HTTP_400_ARG),
+               MSG_ERR_HTTP_400_ARG);
       return;
     }
   qry = (char *) malloc (k + MAX_VARLEN);
   if (!qry)
     {
       free (qrybuf);
-      syslog (LOG_ERR, "execute_query error out of memory");
-      respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
+      syslog (LOG_ERR, "execute_query: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
@@ -1161,14 +1350,18 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       free (qrybuf);
       free (qry);
-      syslog (LOG_ERR, "execute_query error out of memory");
-      respond (conn, plain, 500, strlen ("Out of memory"), "Out of memory");
+      syslog (LOG_ERR, "execute_query: ERROR %s", MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
     }
   mg_get_var (ri->query_string, k, "prefix", prefix, k);
-  if (strlen(prefix) == 0)
+  if (strlen (prefix) == 0)
     {
       free(prefix);
       prefix = 0;
@@ -1176,7 +1369,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_set_lock (&s->lock);
   memset (var, 0, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "save", save, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "query", qrybuf, k);
 // If save is indicated, modify query
   if (strlen (save) > 0)
     {
@@ -1210,8 +1402,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
           int status;
           s->scidb[i] = scidbconnect (SCIDB_HOST,
                                       SCIDB_PORT,
-                                      strlen(USER) > 0 ? USER : NULL,
-                                      strlen(PASS) > 0 ? PASS : NULL,
+                                      strlen (USER) > 0 ? USER : NULL,
+                                      strlen (PASS) > 0 ? PASS : NULL,
                                       &status);
           if (!s->scidb[i])
             {
@@ -1247,8 +1439,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
-               syslog (LOG_ERR, "execute_query error on prefix %s", SERR);
-               respond (conn, plain, 500, strlen (SERR), SERR);
+               syslog (LOG_ERR,
+                       "execute_query: prefix: ERROR prepare: %s",
+                       SERR);
+               respond (conn,
+                        plain,
+                        HTTP_406_NOT_ACCEPTABLE,
+                        strlen (SERR),
+                        SERR);
                omp_unset_lock (&s->lock);
                return;
              }
@@ -1265,8 +1463,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
-               syslog (LOG_ERR, "execute_prepared_query error on prefix %s", SERR);
-               respond (conn, plain, 500, strlen (SERR), SERR);
+               syslog (LOG_ERR,
+                       "execute_query: prefix: ERROR execute: %s",
+                       SERR);
+               respond (conn,
+                        plain,
+                        HTTP_406_NOT_ACCEPTABLE,
+                        strlen (SERR),
+                        SERR);
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1285,8 +1489,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qry);
       free (qrybuf);
       free (prefix);
-      syslog (LOG_ERR, "execute_query error %s", SERR);
-      respond (conn, plain, 500, strlen (SERR), SERR);
+      syslog (LOG_ERR, "execute_query: ERROR prepare: %s", SERR);
+      respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1311,9 +1515,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qry);
       free (qrybuf);
       free (prefix);
-      syslog (LOG_ERR, "execute_prepared_query error %s", SERR);
+      syslog (LOG_ERR, "execute_query: ERROR execute: %s", SERR);
       if (!stream)
-        respond (conn, plain, 500, strlen (SERR), SERR);
+        respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1425,8 +1629,7 @@ begin_request_handler (struct mg_connection *conn)
       if (strstr (ri->uri, ".htpasswd"))
         {
           syslog (LOG_ERR, "client trying to read password file");
-          respond (conn, plain, 401, strlen ("Not authorized"),
-                   "Not authorized");
+          respond (conn, plain, HTTP_403_FORBIDDEN, 0, NULL);
           goto end;
         }
       if (!strcmp (ri->uri, "/"))

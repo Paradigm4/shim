@@ -34,12 +34,12 @@ sleep 1
 
 ## 1. Cancel: no session id
 res=$($CURL "$SHIM_URL/cancel")
-test "$res" == "400"
+test "$res" == "HTTP arguments missing400"
 
 
 ## 2. Cancel: invalid session id
 res=$($CURL "$SHIM_URL/cancel?id=INVALID")
-test "$res" == "404"
+test "$res" == "Session not found404"
 
 
 ## Get session

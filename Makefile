@@ -178,7 +178,11 @@ test14: shim
 	@echo "get_log test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/get_log.sh
 
-test: test0 test1 test2 test3 test4 test5 test6 test9 test10 test12 test13 test14
+test15: shim
+	@echo "status code test"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/status_code.sh
+
+test: test0 test1 test2 test3 test4 test5 test6 test9 test10 test12 test13 test14 test15
 
 grinder: shim0
 	@echo "multiuser valgrind test"
