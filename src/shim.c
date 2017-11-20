@@ -358,7 +358,7 @@ void respond_to_connection_error(struct mg_connection *conn, int connection_stat
 {
     if(connection_status == SHIM_ERROR_AUTHENTICATION)
       {
-        syslog (LOG_ERR, "ERROR: %s", MSG_ERR_HTTP_401);
+        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_401);
         respond (conn,
                  plain,
                  HTTP_401_UNAUTHORIZED,
@@ -367,7 +367,7 @@ void respond_to_connection_error(struct mg_connection *conn, int connection_stat
       }
     else
       {
-        syslog (LOG_ERR, "ERROR: %s", MSG_ERR_HTTP_502);
+        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_502);
         respond (conn,
                  plain,
                  HTTP_502_BAD_GATEWAY,
@@ -518,7 +518,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session: can't create file");
+      syslog (LOG_ERR, "init_session: ERROR can't create file");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -535,7 +535,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session: can't create file");
+      syslog (LOG_ERR, "init_session: ERROR can't create file");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -552,7 +552,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session: can't create pipefile");
+      syslog (LOG_ERR, "init_session: ERROR can't create pipefile");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -561,14 +561,14 @@ init_session (session * s)
   pipename = (char *) malloc (PATH_MAX);
   snprintf (pipename, PATH_MAX, "%s/shim_generic_pipe_%s", TMPDIR,
             s->sessionid);
-  syslog (LOG_ERR, "init_session: creating generic pipe: %s", pipename);
+  syslog (LOG_ERR, "init_session: ERROR creating generic pipe: %s", pipename);
   fd =
     mkfifo (pipename,
             S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   chmod (pipename, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   if (fd != 0)
     {
-      syslog (LOG_ERR, "init_session: can't create pipe, error");
+      syslog (LOG_ERR, "init_session: ERROR can't create pipe, error");
       cleanup_session (s);
       free (pipename);
       omp_unset_lock (&s->lock);
@@ -577,7 +577,7 @@ init_session (session * s)
   fd = rename (pipename, s->opipe);
   if (fd != 0)
     {
-      syslog (LOG_ERR, "init_session: can't rename pipe");
+      syslog (LOG_ERR, "init_session: ERROR can't rename pipe");
       unlink (pipename);
       free (pipename);
       cleanup_session (s);
@@ -1441,7 +1441,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qrybuf);
                free (prefix);
                syslog (LOG_ERR,
-                       "execute_query: prefix: ERROR prepare: %s",
+                       "execute_query: ERROR prefix prepare: %s",
                        SERR);
                respond (conn,
                         plain,
@@ -1465,7 +1465,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qrybuf);
                free (prefix);
                syslog (LOG_ERR,
-                       "execute_query: prefix: ERROR execute: %s",
+                       "execute_query: ERROR prefix execute: %s",
                        SERR);
                respond (conn,
                         plain,
@@ -1761,7 +1761,7 @@ main (int argc, char **argv)
 /* Disable SSL  by removing any 's' port options and getting rid of the ssl
  * options.
  */
-      syslog (LOG_ERR, "Disabling SSL, error reading %s", options[5]);
+      syslog (LOG_ERR, "ERROR Disabling SSL, error reading %s", options[5]);
       ports = cp = strdup (options[1]);
       while ((cp = strchr (cp, 's')) != NULL)
         *cp++ = ',';
@@ -1823,7 +1823,7 @@ main (int argc, char **argv)
   ctx = mg_start (&callbacks, NULL, (const char **) options);
   if (!ctx)
     {
-      syslog (LOG_ERR, "Failed to start web service");
+      syslog (LOG_ERR, "ERROR Failed to start web service");
       return -1;
     }
   syslog (LOG_INFO,
