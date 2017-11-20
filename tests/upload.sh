@@ -14,7 +14,7 @@ function fail {
 
 mkdir -p $td/wwwroot
 echo "homer:elmo" > $td/wwwroot/.htpasswd
-./shim -t /dev/shm/ -p $port -r $td/wwwroot  -f &
+./shim -t /dev/shm -p $port -r $td/wwwroot  -f &
 sleep 1
 
 t1=$(date +"%s.%N")

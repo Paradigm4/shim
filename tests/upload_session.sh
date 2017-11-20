@@ -30,7 +30,7 @@ if [ ! -z ${credentials+x} ]
 then
     echo "$credentials" > $td/wwwroot/.htpasswd
 fi
-./shim -t /dev/shm/ -p $port -r $td/wwwroot -f &
+./shim -t /dev/shm -p $port -r $td/wwwroot -f &
 sleep 1
 
 
