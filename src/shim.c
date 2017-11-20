@@ -55,8 +55,8 @@
 #define DEFAULT_HTTP_PORT "8080,8083s"
 #endif
 
-#define DEFAULT_SAVE_INSTANCE_ID 0      // default instance that does the saving
-#define DEFAULT_TMPDIR "/tmp/"  // Temporary location for I/O buffers
+#define DEFAULT_SAVE_INSTANCE_ID 0  // default instance that does the saving
+#define DEFAULT_TMPDIR "/tmp"       // Temporary location for I/O buffers
 #define PIDFILE "/var/run/shim.pid"
 
 #define WEEK 604800             // One week in seconds
