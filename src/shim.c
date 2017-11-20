@@ -271,7 +271,7 @@ find_session (char * id)
 void
 cleanup_session (session * s)
 {
-  syslog (LOG_INFO, "cleanup_session releasing %s", s->sessionid);
+  syslog (LOG_INFO, "cleanup_session: releasing %s", s->sessionid);
   s->available = SESSION_AVAILABLE;
   strcpy(s->sessionid, "NA");
   s->qid.queryid = 0;
@@ -286,14 +286,14 @@ cleanup_session (session * s)
     }
   if (s->obuf)
     {
-      syslog (LOG_INFO, "cleanup_session unlinking %s", s->obuf);
+      syslog (LOG_INFO, "cleanup_session: unlinking %s", s->obuf);
       unlink (s->obuf);
       free (s->obuf);
       s->obuf = NULL;
     }
   if (s->opipe)
     {
-      syslog (LOG_INFO, "cleanup_session unlinking %s", s->opipe);
+      syslog (LOG_INFO, "cleanup_session: unlinking %s", s->opipe);
       unlink (s->opipe);
       free (s->opipe);
       s->opipe = NULL;
@@ -326,7 +326,7 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
   session *s = find_session (ID);
   if (s)
     {
-      syslog (LOG_INFO, "release_session %s disconnecting", s->sessionid);
+      syslog (LOG_INFO, "release_session: %s disconnecting", s->sessionid);
       for (int i = 0; i < 2; i++)
         {
           if (s->scidb[i])
@@ -419,7 +419,7 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   if (s->qid.queryid <= 0)
     {
-      syslog (LOG_INFO, "%s: ERROR %s", "cancel", MSG_ERR_HTTP_409);
+      syslog (LOG_INFO, "cancel: ERROR %s", MSG_ERR_HTTP_409);
       respond (conn,
                plain,
                HTTP_409_CONFLICT,
@@ -428,7 +428,7 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
 
-  syslog (LOG_INFO, "cancel session %s queryid %llu.%llu s->scidb[1] %p", ID,
+  syslog (LOG_INFO, "cancel: session %s queryid %llu.%llu s->scidb[1] %p", ID,
           s->qid.coordinatorid, s->qid.queryid, s->scidb[1]);
   if (s->scidb[1] == NULL)
     {
@@ -449,7 +449,7 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
             s->qid.coordinatorid, s->qid.queryid);
   memset (SERR, 0, MAX_VARLEN);
   executeQuery (s->scidb[1], var1, 1, SERR);
-  syslog (LOG_INFO, "cancel %s", SERR);
+  syslog (LOG_INFO, "cancel: %s", SERR);
   time (&s->time);
   respond (conn, plain, 200, 0, NULL);
 }
@@ -518,7 +518,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session can't create file");
+      syslog (LOG_ERR, "init_session: can't create file");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -535,7 +535,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session can't create file");
+      syslog (LOG_ERR, "init_session: can't create file");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -552,7 +552,7 @@ init_session (session * s)
     close (fd);
   else
     {
-      syslog (LOG_ERR, "init_session can't create pipefile");
+      syslog (LOG_ERR, "init_session: can't create pipefile");
       cleanup_session (s);
       omp_unset_lock (&s->lock);
       return 0;
@@ -561,14 +561,14 @@ init_session (session * s)
   pipename = (char *) malloc (PATH_MAX);
   snprintf (pipename, PATH_MAX, "%s/shim_generic_pipe_%s", TMPDIR,
             s->sessionid);
-  syslog (LOG_ERR, "creating generic pipe: %s", pipename);
+  syslog (LOG_ERR, "init_session: creating generic pipe: %s", pipename);
   fd =
     mkfifo (pipename,
             S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   chmod (pipename, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   if (fd != 0)
     {
-      syslog (LOG_ERR, "init_session can't create pipe, error");
+      syslog (LOG_ERR, "init_session: can't create pipe, error");
       cleanup_session (s);
       free (pipename);
       omp_unset_lock (&s->lock);
@@ -577,7 +577,7 @@ init_session (session * s)
   fd = rename (pipename, s->opipe);
   if (fd != 0)
     {
-      syslog (LOG_ERR, "init_session can't rename pipe");
+      syslog (LOG_ERR, "init_session: can't rename pipe");
       unlink (pipename);
       free (pipename);
       cleanup_session (s);
@@ -623,7 +623,7 @@ get_session ()
         {
           if (t - sessions[j].time > TIMEOUT)
             {
-              syslog (LOG_INFO, "get_session reaping session %d", j);
+              syslog (LOG_INFO, "get_session: reaping session %d", j);
               omp_set_lock (&sessions[j].lock);
               cleanup_session (&sessions[j]);
               omp_unset_lock (&sessions[j].lock);
@@ -806,7 +806,7 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
     }
 
   int j = get_session ();
-  syslog (LOG_INFO, "new_session %d", j);
+  syslog (LOG_INFO, "new_session: %d", j);
   if (j > -1)
     {
       session *s = &sessions[j];
@@ -820,7 +820,8 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
                                       strlen (PASS) > 0 ? PASS : NULL,
                                       &status);
           syslog (LOG_INFO,
-                  "%p %d %lu %lu", s->scidb[i], status, strlen (USER), strlen (PASS));
+                  "new_session: %p %d %lu %lu",
+                  s->scidb[i], status, strlen (USER), strlen (PASS));
           if (!s->scidb[i] &&
               strlen (USER) > 0 &&
               strlen (PASS) > 0)
@@ -843,7 +844,7 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       */
 
       syslog (LOG_INFO,
-              "new_session session id=%s ibuf=%s obuf=%s opipe=%s scidb[0]=%p scidb[1]=%p",
+              "new_session: session id=%s ibuf=%s obuf=%s opipe=%s scidb[0]=%p scidb[1]=%p",
               s->sessionid, s->ibuf, s->obuf, s->opipe, s->scidb[0], s->scidb[1]);
       snprintf (buf, MAX_VARLEN, "%s", s->sessionid);
       respond (conn, plain, 200, strlen (buf), buf);
@@ -872,7 +873,7 @@ void
 version (struct mg_connection *conn)
 {
   char buf[MAX_VARLEN];
-  syslog (LOG_INFO, "version \n");
+  syslog (LOG_INFO, "version");
   snprintf (buf, MAX_VARLEN, "%s", VERSION);
   respond (conn, plain, 200, strlen (buf), buf);
 }
@@ -885,7 +886,7 @@ debug (struct mg_connection *conn)
   char buf[MAX_VARLEN];
   char *p = buf;
   size_t l, k = MAX_VARLEN;
-  syslog (LOG_INFO, "debug \n");
+  syslog (LOG_INFO, "debug");
   omp_set_lock (&biglock);
   for (j = 0; j < MAX_SESSIONS; ++j)
     {
@@ -984,7 +985,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
       syslog (LOG_INFO, "read_bytes id=%s returning entire buffer", ID);
       mg_send_file (conn, s->obuf);
       omp_unset_lock (&s->lock);
-      syslog (LOG_INFO, "read_bytes id=%s done", ID);
+      syslog (LOG_INFO, "read_bytes: id=%s done", ID);
       return;
     }
   if (n > MAX_RETURN_BYTES)
@@ -1027,7 +1028,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
     }
 
   l = (int) read (s->pd, buf, n);
-  syslog (LOG_INFO, "read_bytes  read %d n=%d", l, n);
+  syslog (LOG_INFO, "read_bytes: read %d n=%d", l, n);
   if (l < 1)                    // EOF or error
     {
       free (buf);
@@ -1110,13 +1111,13 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_set_lock (&s->lock);
   if ((n < 1) || s->stream)
     {
-      syslog (LOG_INFO, "read_lines returning entire buffer");
+      syslog (LOG_INFO, "read_lines: returning entire buffer");
       mg_send_file (conn, s->obuf);
       omp_unset_lock (&s->lock);
       return;
     }
 // Check to see if output buffer is open for reading
-  syslog (LOG_INFO, "read_lines opening buffer");
+  syslog (LOG_INFO, "read_lines: opening buffer");
   if (s->pd < 1)
     {
       s->pd = open (s->stream ? s->opipe : s->obuf, O_RDONLY | O_NONBLOCK);
@@ -1291,7 +1292,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   memset (var, 0, MAX_VARLEN);
-  syslog (LOG_INFO, "execute_query for session id %s", ID);
+  syslog (LOG_INFO, "execute_query: for session id %s", ID);
   s = find_session (ID);
   if (!s)
     {
@@ -1398,7 +1399,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     {
       if (!s->scidb[i])
         {
-          syslog (LOG_INFO, "execute_query %s scidbconnect[%d]", ID, i);
+          syslog (LOG_INFO, "execute_query: %s scidbconnect[%d]", ID, i);
           int status;
           s->scidb[i] = scidbconnect (SCIDB_HOST,
                                       SCIDB_PORT,
@@ -1417,7 +1418,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
             }
         }
     }
-  syslog (LOG_INFO, "execute_query %s connected user %s s->scidb[0] = %p s->scidb[1] = %p %s", ID, USER, s->scidb[0], s->scidb[1], qry);
+  syslog (LOG_INFO, "execute_query: %s connected user %s s->scidb[0] = %p s->scidb[1] = %p %s", ID, USER, s->scidb[0], s->scidb[1], qry);
 
   if (prefix) // 1 or more statements to run first
     {
@@ -1431,7 +1432,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
              last = 1;
            else
              *qend = 0;      //simulate null-termination
-           syslog (LOG_INFO, "execute_query %s running prefix", ID);
+           syslog (LOG_INFO, "execute_query: %s running prefix", ID);
            prepare_query (&pq, s->scidb[0], qstart, 1, SERR);
            q = pq.queryid;
            if (q.queryid < 1 || !pq.queryresult)
@@ -1494,7 +1495,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_unset_lock (&s->lock);
       return;
     }
-  syslog (LOG_INFO, "execute_query id=%s scidb queryid = %llu.%llu", ID,
+  syslog (LOG_INFO, "execute_query: id=%s scidb queryid = %llu.%llu", ID,
           q.coordinatorid, q.queryid);
 /* Set the queryID for potential future cancel event.
  * The time flag is set to a future value to prevent get_session from
@@ -1527,10 +1528,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   free (qry);
   free (qrybuf);
   free (prefix);
-  syslog (LOG_INFO, "execute_query %s done", s->sessionid);
+  syslog (LOG_INFO, "execute_query: %s done", s->sessionid);
   if (rel > 0)
     {
-      syslog (LOG_INFO, "execute_query %s disconnecting", s->sessionid);
+      syslog (LOG_INFO, "execute_query: %s disconnecting", s->sessionid);
       for (int i = 0; i < 2; i++)
         {
           if (s->scidb[i])
@@ -1539,7 +1540,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               s->scidb[i] = NULL;
             }
         }
-      syslog (LOG_INFO, "execute_query releasing HTTP session %s",
+      syslog (LOG_INFO, "execute_query: releasing HTTP session %s",
               s->sessionid);
       cleanup_session (s);
     }
@@ -1628,7 +1629,7 @@ begin_request_handler (struct mg_connection *conn)
 // fallback to http file server
       if (strstr (ri->uri, ".htpasswd"))
         {
-          syslog (LOG_ERR, "client trying to read password file");
+          syslog (LOG_ERR, "ERROR client trying to read password file");
           respond (conn, plain, HTTP_403_FORBIDDEN, 0, NULL);
           goto end;
         }
@@ -1718,7 +1719,7 @@ signalHandler (int sig)
   omp_set_lock (&biglock);
   for (j = 0; j < MAX_SESSIONS; ++j)
     {
-      syslog (LOG_INFO, "terminating, reaping session %d", j);
+      syslog (LOG_INFO, "Terminating, reaping session %d", j);
 /* note: we intentionally forget about acquiring locks here,
  * we are about to exit!
  */
@@ -1822,7 +1823,7 @@ main (int argc, char **argv)
   ctx = mg_start (&callbacks, NULL, (const char **) options);
   if (!ctx)
     {
-      syslog (LOG_ERR, "failed to start web service");
+      syslog (LOG_ERR, "Failed to start web service");
       return -1;
     }
   syslog (LOG_INFO,
