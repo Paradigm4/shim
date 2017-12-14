@@ -1536,7 +1536,11 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   else
     {
-      s->save = 0;
+      /* s->save is initalized with 0. Do no reset it to 0 here. If it
+         was set to 1 by a previous execute_query, let it stay set to
+         1. This way the prevously saved output is still available
+         even if other queries were executed since then. */
+      // s->save = 0;
       snprintf (qry, k + MAX_VARLEN, "%s", qrybuf);
     }
 
