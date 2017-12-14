@@ -14,6 +14,7 @@ before_install:
   - docker run
     --name scidb
     --detach
+    --volume /dev/shm
     --tmpfs /dev/shm
     --volume `pwd`:/shim
     --publish 8080:8080
@@ -22,6 +23,8 @@ before_install:
   - docker exec scidb service shimsvc stop
 
 install:
+  - docker exec scidb dd if=/dev/zero of=/dev/shm/1 bs=10M count=1
+  - docker exec scidb ls -l /dev/shm
   - docker exec scidb apt-get update
   - docker exec scidb apt-get install
     --assume-yes
