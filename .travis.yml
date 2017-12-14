@@ -14,7 +14,6 @@ before_install:
   - docker run
     --name scidb
     --detach
-    --volume /dev/shm
     --tmpfs /dev/shm
     --volume `pwd`:/shim
     --publish 8080:8080
