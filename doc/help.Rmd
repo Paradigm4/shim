@@ -5,10 +5,9 @@ date: "<div style='font-size: 0.7em'>11/9/2015</div>"
 output:
   html_document:
     toc: true
-    theme: cerulean
     css: shimstyle.css
+    self_contained: false
 ---
-
 # What's new (for SciDB 15.12)
 
 ## Support for the SciDB advanced I/O toolbox (_aio_tools_)
