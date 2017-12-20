@@ -78,7 +78,7 @@ test "$res" == "200"
 
 ## 2. HTTP 401 Unauthorized
 ## - Shim
-res=$(curl --write-out %{http_code} --silent "$SHIM_URL/get_version")
+res=$(curl --write-out %{http_code} --silent "$SHIM_URL/version")
 test "$res" == "401"
 
 ## - SciDB
