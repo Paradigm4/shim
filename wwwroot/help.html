@@ -361,11 +361,11 @@ List on port 8080 but only on the local loopback interface; listen on port 1234(
 username2:password2
 ...</code></pre>
 <p>Use plain text passwords in the file, and consider changing the permissions of the file to restrict access. Delete the .htpasswd file to disable basic digest access authentication.</p>
-<p>Basic digest authentication works on plain or TLS-encrypted connections but can not be used in combination with SciDB authentication (see below).</p>
+<p>Basic digest authentication works on plain or TLS-encrypted connections.</p>
 </div>
 <div id="tlsssl-encryption" class="section level2">
 <h2>TLS/SSL encryption</h2>
-<p>Shim optionally exposes both open and encrypted (HTTPS/TLS) services. You can provide a signed certificate in the <code>/var/lib/shim</code> directory. A generic random unsigned certific is automatically generated for you if you install shim using either the .deb or .rpm package installer.</p>
+<p>Shim optionally exposes both open and encrypted (HTTPS/TLS) services. You can provide a signed certificate in the <code>/var/lib/shim</code> directory. A generic random unsigned certificate is automatically generated for you if you install shim using either the .deb or .rpm package installer.</p>
 </div>
 <div id="scidb-authentication" class="section level2">
 <h2>SciDB authentication</h2>
@@ -407,14 +407,14 @@ RESPONSE
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>curl -f -s http://localhost:8080/version </code></pre>
-<pre><code>16.9.4</code></pre>
+<pre><code>16.9.6</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2017-12-18 12:31
+  Date: 2017-12-20 19:49
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -437,28 +437,40 @@ GET
 <td>
 PARAMETERS
 <td>
+<ul>
+<li><strong>user</strong> <em>optional</em> SciDB authentication user name</li>
+<li><strong>password</strong> <em>optional</em> SciDB authentication password
 <tr>
 <td>
 RESPONSE
-<td>
-<ul>
+<td></li>
 <li>Success: HTTP 200 and text session ID value in text/plain payload</li>
-<li>Failure (out of resources/server unavailable): HTTP 503</li>
-<li>Invalid request: HTTP 400
+<li>Failure (authentication failure): HTTP 401</li>
+<li>Failure (out of resources or server unavailable): HTTP 503
+<tr>
+<td>
+NOTES
+<td>
+If applicable, SciDB authentication credentials can be provided at this time (preferred). Otherwise, SciDB credentials can be provided later in the <code>/execute_query</code> request. The credentials need to be provided only once per session.
 <tr>
 <td>
 EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>44</code></pre>
+<pre><code>d2ct68022y2mncqrn2tkvzisjzz59ysn</code></pre>
+<pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
+<pre><code>0kw69x9rbrdy33p6myqhx99wop2yna1n</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;45&quot;</code></pre>
+<pre><code>[1] &quot;ax9juybmpo09sqfuo6b2v1yzqgddqeg1&quot;</code></pre>
+<pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
+(id = rawToChar(id$content))</code></pre>
+<pre><code>[1] &quot;s5024botgpi8vy2zkt1vu0a0gotni94a&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -485,8 +497,8 @@ PARAMETERS
 RESPONSE
 <td></li>
 <li>Success: HTTP 200</li>
-<li>Failure (Session not found): HTTP 404</li>
-<li>Failure (invalid http query): HTTP 400
+<li>Failure (missing HTTP arguments): HTTP 400</li>
+<li>Failure (session not found): HTTP 404
 <tr>
 <td>
 EXAMPLE (R)
@@ -494,10 +506,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;46&quot;</code></pre>
+<pre><code>[1] &quot;v4dzg18c6r015i15bigmiqmfew2xl6ng&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=46]
-  Date: 2017-12-18 12:31
+<pre><code>Response [http://localhost:8080/release_session?id=v4dzg18c6r015i15bigmiqmfew2xl6ng]
+  Date: 2017-12-20 19:49
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -528,8 +540,8 @@ PARAMETERS
 <td>
 <ul>
 <li><strong>id</strong> an HTTP session ID obtained from <code>/new_session</code></li>
-<li><strong>user</strong> <em>optional</em> SciDB authentication user name (TLS connections only)</li>
-<li><strong>password</strong> <em>optional</em> SciDB authentication password (TLS connections only)</li>
+<li><strong>user</strong> <em>optional</em> SciDB authentication user name</li>
+<li><strong>password</strong> <em>optional</em> SciDB authentication password</li>
 <li><strong>query</strong> AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters</li>
 <li><strong>save</strong> optional SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by <code>read_lines</code> or <code>read_bytes</code>. If the save parameter is not specified, don’t save the query output.</li>
 <li><strong>release</strong> optional 0 or 1: if 1 then release_session as soon as query completes. The default value is 0 if not specified (see additional notes below).</li>
@@ -538,13 +550,13 @@ PARAMETERS
 <td>
 RESPONSE
 <td></li>
-<li>Success: HTTP 200 text/plain (SciDB Query ID)</li>
-<li>Failure (SciDB not available error): HTTP 503 text/plain (ERROR TEXT)</li>
-<li>Failure (SciDB query error): HTTP 500 text/plain (SCIDB ERROR TEXT)</li>
-<li>Failure (out of memory error): HTTP 507 text/plain (SCIDB ERROR TEXT)</li>
-<li>Failure (Invalid session): HTTP 404</li>
-<li>Failure (invalid http query): HTTP 400</li>
-<li>Not authorized (encrypted only): HTTP 401
+<li>Success: HTTP 200 and SciDB query ID in text/plain payload</li>
+<li>Failure (missing HTTP arguments): HTTP 400</li>
+<li>Failure (authentication failure): HTTP 401</li>
+<li>Failure (session not found): HTTP 404</li>
+<li>Failure (SciDB query error): HTTP 406 and SciDB error text in text/plain payload</li>
+<li>Failure (Shim internal error): HTTP 500 (out of memory)</li>
+<li>Failure (SciDB connection failed): HTTP 502
 <tr>
 <td>
 NOTES
@@ -553,9 +565,9 @@ Shim only supports AFL queries.
 <p>
 Remember to URL-encode the SciDB query string.
 <p>
-Specify optional user and password information for SciDB authentication. Authentication requires a TLS encrypted connection.
+Specify optional user and password information for SciDB authentication.
 <p>
-500 and 503 errors result in removal of the web session ID and related resources (thus, <code>release_session</code> does not have to be called after such an error).
+An HTTP 401, 500, or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <p>
 This method blocks until the query completes.
 <p>
@@ -576,14 +588,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1513596715919087055&quot;</code></pre>
+<pre><code>[1] &quot;1513795745208727796&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1513596715977417272</code></pre>
+<pre><code>1513795745265676208</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -593,9 +605,9 @@ session = rawToChar(id$content)
 query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=50&amp;query=consume(42)&amp;release=1]
-  Date: 2017-12-18 12:31
-  Status: 500
+<pre><code>Response [http://localhost:8080/execute_query?id=k7yv7kv2bxvscpwiabtnm4b89j58ve9v&amp;query=consume(42)&amp;release=1]
+  Date: 2017-12-20 19:49
+  Status: 406
   Content-Type: text/html
   Size: 279 B
 UserQueryException in file: src/query/parser/Translator.cpp function: ma...
@@ -606,8 +618,9 @@ consume(42)</code></pre>
 <td>
 EXAMPLE using prefix to set namespace (curl)
 <td>
-<p>See the <code>tests/scidb_auth_example.sh</code> file for a full example.</p>
-<pre class="bash"><code>id=$(curl -s -k &quot;https://${host}:${port}/new_session&quot;)
+<p>See the <code>examples/scidb_auth.sh</code> file for a full example.</p>
+<pre class="bash"><code># not ran
+id=$(curl -s -k &quot;https://${host}:${port}/new_session&quot;)
 curl -f -s -k &quot;https://${host}:${port}/execute_query?id=${id}&amp;prefix=set_namespace(&#39;cazart&#39;)&amp;query=list()&amp;user=${USER}&amp;password=${PASSWORD}&amp;save=dcsv&quot;
 curl -f -s -k &quot;https://${host}:${port}/read_lines?id=${id}&amp;n=0&quot;
 curl -f -s -k &quot;https://${host}:${port}/release_session?id=${id}&quot;</code></pre>
@@ -636,29 +649,30 @@ PARAMETERS
 <td>
 <ul>
 <li><strong>id</strong> an HTTP session ID obtained from <code>/new_session</code></li>
-<li><strong>user</strong> <em>optional</em> SciDB authentication user name (TLS connections only)</li>
-<li><strong>password</strong> <em>optional</em> SciDB authentication password (TLS connections only)
+<li><strong>user</strong> <em>optional</em> SciDB authentication user name</li>
+<li><strong>password</strong> <em>optional</em> SciDB authentication password
 <tr>
 <td>
 NOTES
 <td>
 <p>
-Specify optional user and password information for SciDB authentication. Authentication requires a TLS encrypted connection.
+Specify optional user and password information for SciDB authentication.
 <tr>
 <td>
 RESPONSE
 <td></li>
 <li>Success: HTTP 200</li>
+<li>Failure (missing HTTP arguments): HTTP 400</li>
+<li>Failure (authentication failure): HTTP 401</li>
 <li>Failure (session not found): HTTP 404</li>
-<li>Failure (invalid http query): HTTP 400</li>
-<li>Not authorized (encrypted only): HTTP 401</li>
+<li>Failure (session has no query): HTTP 409</li>
 <li>Failure (could not connect to SciDB): HTTP 503
 <tr>
 <td>
 EXAMPLE (R)
 <td></li>
 </ul>
-<pre class="r"><code># An example cancellation of a query associated with shim ID 19 (not run)
+<pre class="r"><code># An example cancellation of a query associated with shim ID 19 (not ran)
 httr::GET(&quot;http://localhost:8080/cancel?id=19&quot;)</code></pre>
 </table>
 </div>
@@ -686,14 +700,12 @@ PARAMETERS
 <td>
 RESPONSE
 <td></li>
-<li>Success: HTTP 200 followed by application/octet-stream query result (up to n lines)</li>
-<li>Failure (invalid HTTP query string): HTTP 400</li>
+<li>Success: HTTP 200 and application/octet-stream query result (up to n lines)</li>
+<li>Failure (missing HTTP arguments): HTTP 400</li>
 <li>Failure (session not found): HTTP 404</li>
-<li>Failure (end of file): HTTP 410</li>
-<li>Failure (invalid request): HTTP 414</li>
-<li>Failure (SciDB server error): HTTP 500</li>
-<li>Failure (could not connect to SciDB server error): HTTP 503</li>
-<li>Failure (server out of memory): HTTP 507
+<li>Failure (output not saved): HTTP 410</li>
+<li>Failure (range out of bounds): HTTP 416</li>
+<li>Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer)
 <tr>
 <td>
 NOTES
@@ -705,6 +717,8 @@ Be sure to properly url-encode special characters like the plus sign (+) in the 
 When n&gt;0, iterative requests to <code>read_lines</code> are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don’t use this option if you can avoid it.
 <p>
 Note that query results are <em>always</em> returned as application/octet-stream.
+<p>
+An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <tr>
 <td>
 EXAMPLE (curl)
@@ -714,7 +728,7 @@ EXAMPLE (curl)
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=list(&#39;functions&#39;)&amp;save=dcsv&quot;
 curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1513596716093886059{No} name,profile,deterministic,library
+<pre><code>1513795745368781034{No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
 {2} &#39;%&#39;,&#39;int32 %(int32,int32)&#39;,true,&#39;scidb&#39;
@@ -750,14 +764,12 @@ PARAMETERS
 <td>
 RESPONSE
 <td></li>
-<li>Success: HTTP 200 followed by application/octet-stream query result (up to n lines)</li>
-<li>Failure (invalid HTTP query string): HTTP 400</li>
+<li>Success: HTTP 200 and application/octet-stream query result (up to n lines)</li>
+<li>Failure (missing HTTP arguments): HTTP 400</li>
 <li>Failure (session not found): HTTP 404</li>
-<li>Failure (end of file): HTTP 410</li>
-<li>Failure (invalid request): HTTP 414</li>
-<li>Failure (SciDB server error): HTTP 500</li>
-<li>Failure (could not connect to SciDB server error): HTTP 503</li>
-<li>Failure (server out of memory): HTTP 507
+<li>Failure (output not saved): HTTP 410</li>
+<li>Failure (range out of bounds): HTTP 416</li>
+<li>Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer, get file status failed)
 <tr>
 <td>
 NOTES
@@ -769,6 +781,8 @@ Be sure to properly url-encode special characters like the plus sign (+) in the 
 When n&gt;0, iterative requests to <code>read_bytes</code> are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don’t use this option if you can avoid it.
 <p>
 Note that query results are <em>always</em> returned as application/octet-stream.
+<p>
+An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <tr>
 <td>
 EXAMPLE (curl)
@@ -786,7 +800,7 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>15135967161853368740000000                        1                        2
+<pre><code>15137957454520255530000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
 0000060                        7                        8
@@ -818,10 +832,9 @@ PARAMETERS
 <td>
 RESPONSE
 <td></li>
-<li>Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response.</li>
-<li>Failure (invalid HTTP query string): HTTP 400</li>
-<li>Failure (Session not found): HTTP 404</li>
-<li>Failure (Server error): HTTP 500
+<li>Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response</li>
+<li>Failure (missing HTTP arguments): HTTP 400</li>
+<li>Failure (session not found): HTTP 404
 <tr>
 <td>
 NOTES
@@ -839,8 +852,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0405907 s, 129 MB/s
-## /tmp//shim_input_buf_o32QzH</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0467419 s, 112 MB/s
+## /tmp/shim_input_buf_VRDF32</code></pre>
 </table>
 </div>
 <div id="upload" class="section level3">
@@ -867,10 +880,9 @@ PARAMETERS
 <td>
 RESPONSE
 <td></li>
-<li>Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response.</li>
-<li>Failure (invalid HTTP query string): HTTP 400</li>
-<li>Failure (Session not found): HTTP 404</li>
-<li>Failure (Server error): HTTP 500
+<li>Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response</li>
+<li>Failure (missing HTTP arguments, empty file): HTTP 400</li>
+<li>Failure (session not found): HTTP 404
 <tr>
 <td>
 NOTES
@@ -892,8 +904,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0343202 s, 153 MB/s
-## /tmp//shim_input_buf_crSLNW</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.029498 s, 178 MB/s
+## /tmp/shim_input_buf_v19W3n</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -904,15 +916,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=55]
-##   Date: 2017-12-18 12:31
+<pre><code>## Response [http://localhost:8080/upload?id=fbrrpoqupd32gzjsuyi50el82v1svcjq]
+##   Date: 2017-12-20 19:49
 ##   Status: 200
 ##   Content-Type: text/plain
-##   Size: 27 B</code></pre>
+##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=55]
-##   Date: 2017-12-18 12:31
+<pre><code>## Response [http://localhost:8080/release_session?id=fbrrpoqupd32gzjsuyi50el82v1svcjq]
+##   Date: 2017-12-20 19:49
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
