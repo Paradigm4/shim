@@ -408,14 +408,14 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -f -s http://localhost:8080/version </code></pre>
-<pre><code>16.9.4</code></pre>
+<pre><code>16.9.6</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2017-12-21 18:08
+  Date: 2017-12-21 18:17
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -460,19 +460,19 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>73</code></pre>
+<pre><code>jy9757acx1eve7nmoigsz8fxqqqvjj5i</code></pre>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
-<pre><code>74</code></pre>
+<pre><code>iu531gvyx99bwdekbutaj889ee4dx9wf</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;75&quot;</code></pre>
+<pre><code>[1] &quot;khyldt0ri92f2wfe7ooqwcfbqjoo80js&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;76&quot;</code></pre>
+<pre><code>[1] &quot;yiubra2azl52x0gkpkq1x5sn4xrdxblb&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -508,10 +508,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;77&quot;</code></pre>
+<pre><code>[1] &quot;9v3g5l65mbnks3kh3bi0gb4lobe12fdb&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=77]
-  Date: 2017-12-21 18:08
+<pre><code>Response [http://localhost:8080/release_session?id=9v3g5l65mbnks3kh3bi0gb4lobe12fdb]
+  Date: 2017-12-21 18:17
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -590,14 +590,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1513872517579797769&quot;</code></pre>
+<pre><code>[1] &quot;1513873031334506250&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1513872517630792653</code></pre>
+<pre><code>1513873031385223983</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -607,9 +607,9 @@ session = rawToChar(id$content)
 query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=81&amp;query=consume(42)&amp;release=1]
-  Date: 2017-12-21 18:08
-  Status: 500
+<pre><code>Response [http://localhost:8080/execute_query?id=c8gu6hws62wx6w0c8nfakzxz9ap2g37t&amp;query=consume(42)&amp;release=1]
+  Date: 2017-12-21 18:17
+  Status: 406
   Content-Type: text/html
   Size: 279 B
 UserQueryException in file: src/query/parser/Translator.cpp function: ma...
@@ -730,7 +730,7 @@ EXAMPLE (curl)
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=list(&#39;functions&#39;)&amp;save=dcsv&quot;
 curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1513872517729339524{No} name,profile,deterministic,library
+<pre><code>1513873031484720225{No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
 {2} &#39;%&#39;,&#39;int32 %(int32,int32)&#39;,true,&#39;scidb&#39;
@@ -802,7 +802,7 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>15138725178195858810000000                        1                        2
+<pre><code>15138730315758667710000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
 0000060                        7                        8
@@ -858,8 +858,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0305247 s, 172 MB/s
-## /tmp/shim_input_buf_mL5pVm</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0293156 s, 179 MB/s
+## /tmp/shim_input_buf_Vb4nhF</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -870,15 +870,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=85]
-##   Date: 2017-12-21 18:08
+<pre><code>## Response [http://localhost:8080/upload?id=5vk1d26f4yy2kpucop4o6icc1kf118u6]
+##   Date: 2017-12-21 18:17
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=85]
-##   Date: 2017-12-21 18:08
+<pre><code>## Response [http://localhost:8080/release_session?id=5vk1d26f4yy2kpucop4o6icc1kf118u6]
+##   Date: 2017-12-21 18:17
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
