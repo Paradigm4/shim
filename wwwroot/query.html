@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>SciDB Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <link href="css/bootstrap.css" rel="stylesheet">
+ <link href="help_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 <!--[if gte IE 9]>
 <style>
 .ie_show { display:block }
@@ -23,29 +23,27 @@
 
 <body>
 
-  <div class="navbar navbar-inverse navbar-fixed-top" style="margin-bottom: 0px">
-    <div class="navbar-inner">
-      <div class="container">
-        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+  <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
-        </a>
-        <a class="brand" href="index.html">SciDB</a>
-        <div class="nav-collapse collapse">
-          <ul class="nav">
-            <li><a href="index.html">Dashboard</a></li>
-            <li class="active"><a href="query.html">Interactive Query</a></li>
-            <li><a href="help.html">Web API</a></li>
-            <li><a onclick="logout();" href="#">Logout</a>
-          </ul>
-          <div class="pull-right">
-            <ul class="nav">
-            <li><a href="http://paradigm4.com">http://paradigm4.com</a>
-            <ul>
-          </div>
-        </div><!--/.nav-collapse -->
+        </button>
+        <a class="navbar-brand" href="index.html">SciDB</a>
       </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li><a href="index.html">Dashboard</a></li>
+          <li class="active"><a href="query.html">Interactive Query</a></li>
+          <li><a href="help.html">Help</a></li>
+          <li><a onclick="logout();" href="#">Logout</a>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="http://paradigm4.com">http://paradigm4.com</a></li>
+        </ul>
+      </div><!--/.nav-collapse -->
     </div>
   </div>
 
@@ -168,8 +166,11 @@ name already exists, your browser will add a number to the name to avoid overwri
 </div>
 
 <!-- clean up these script dependencies...minify...-->
-<script src="js/jquery.min.js"></script>
-<script src="js/bootstrap.js"></script>
+<script src="help_files/jquery-1.11.3/jquery.min.js"></script>
+<script src="help_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="help_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="help_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="help_files/navigation-1.1/tabsets.js"></script>
 <script src="js/bootstrap-modal.js"></script>
 <script src="js/cook.js"></script>
 <script src="js/scidb_query.js"></script>
