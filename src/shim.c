@@ -717,28 +717,32 @@ get_session ()
 }
 
 
-/* Retained for compatibility
- *
+/*
  * 200 is returned with no message.
  */
+/*
+*** DISCONTINUED ***
 void
 login (struct mg_connection *conn)
 {
   respond (conn, plain, 200, 0, NULL);
   return;
 }
+*/
 
 
-/* Retained for compatibility
- *
+/*
  * 200 is returned with no message.
  */
+/*
+*** DISCONTINUED ***
 void
 logout (struct mg_connection *conn)
 {
   respond (conn, plain, 200, 0, NULL);
   return;
 }
+*/
 
 
 /* Client data upload
@@ -1840,10 +1844,12 @@ begin_request_handler (struct mg_connection *conn)
   else if (!strcmp (ri->uri, "/debug"))
     debug (conn);
 #endif
+  /*
   else if (!strcmp (ri->uri, "/login"))
     login (conn);
   else if (!strcmp (ri->uri, "/logout"))
     logout (conn);
+  */
   else if (!strcmp (ri->uri, "/release_session"))
     release_session (conn, ri, 1);
   /*
