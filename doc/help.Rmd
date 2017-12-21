@@ -253,7 +253,8 @@ https://github.com/Paradigm4/shim/tree/master/tests for additional examples.
 <tr><td>DESCRIPTION  <td>Print the shim code version string
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS
-<tr><td>RESPONSE <td>**Success** HTTP 200 and text version string value in text/plain payload 
+<tr><td>RESPONSE <td>
+- Success: HTTP 200 and text version string value in text/plain payload 
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, engine='bash', comment=NA}
@@ -277,6 +278,7 @@ httr::GET("http://localhost:8080/version")
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and text session ID value in text/plain payload 
 - Failure (authentication failure): HTTP 401
+- Failure (SciDB connection failed): HTTP 502
 - Failure (out of resources or server unavailable): HTTP 503
 <tr><td>NOTES <td>
 If applicable, SciDB authentication credentials can be provided at this time (preferred). Otherwise, SciDB credentials can be provided later in the `/execute_query` request. The credentials need to be provided only once per session.
@@ -417,7 +419,7 @@ Specify optional user and password information for SciDB authentication.
 - Failure (authentication failure): HTTP 401
 - Failure (session not found): HTTP 404 
 - Failure (session has no query): HTTP 409 
-- Failure (could not connect to SciDB): HTTP 503 
+- Failure (could not connect to SciDB): HTTP 502
 <tr><td>EXAMPLE (R)
 <td>
 ```{r, comment=NA, eval=FALSE}
@@ -568,7 +570,6 @@ httr::POST(sprintf("http://localhost:8080/upload?id=%s", session), body="Hello s
 httr::GET(sprintf("http://localhost:8080/release_session?id=%s", session))
 ```
 </table>
-
 
 
 # Orphaned Sessions
