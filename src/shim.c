@@ -422,8 +422,6 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
   char var1[MAX_VARLEN];
   char ID[SESSIONID_LEN];
   char SERR[MAX_VARLEN];
-  char USER[MAX_VARLEN];
-  char PASS[MAX_VARLEN];
   if (!ri->query_string)
     {
       syslog (LOG_ERR, "cancel: ERROR %s", MSG_ERR_HTTP_400_ARG);
@@ -436,10 +434,6 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   k = strlen (ri->query_string);
   mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
-  memset (USER, 0, MAX_VARLEN);
-  memset (PASS, 0, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   session *s = find_session (ID);
   if (s == NULL)
     {
@@ -466,25 +460,6 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
 
-  if (s->scidb[1] == NULL)
-    {
-      syslog (LOG_INFO,
-              "cancel[%.*s]: scidbconnect [1], user %s",
-              SESSIONID_SHOW_LEN,
-              s->sessionid,
-              USER);
-      int status;
-      s->scidb[1] = scidbconnect (SCIDB_HOST,
-                                  SCIDB_PORT,
-                                  strlen (USER) > 0 ? USER : NULL,
-                                  strlen (PASS) > 0 ? PASS : NULL,
-                                  &status);
-      if (s->scidb[1] == NULL)
-        {
-          respond_to_connection_error(conn, status);
-          return;
-        }
-    }
   memset (var1, 0, MAX_VARLEN);
   snprintf (var1, MAX_VARLEN, "cancel(\'%llu.%llu\')",
             s->qid.coordinatorid, s->qid.queryid);
@@ -916,26 +891,14 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
                                       strlen (USER) > 0 ? USER : NULL,
                                       strlen (PASS) > 0 ? PASS : NULL,
                                       &status);
-          if (!s->scidb[i] &&
-              strlen (USER) > 0 &&
-              strlen (PASS) > 0)
+          if (!s->scidb[i])
             {
-              // Error only if credentials are provided and connection
-              // failed
-              respond_to_connection_error(conn, status);
+              respond_to_connection_error (conn, status);
               cleanup_session (s);
               omp_unset_lock (&s->lock);
               return;
             }
         }
-      /*
-        Legacy API: USER/PASS provided in /execute or /cancel
-
-        Backward compatible:
-
-        If no USER/PASS are prodeded, do not report an error if the
-        connection fails.
-      */
 
       syslog (LOG_INFO,
               "new_session[%.*s]: ready, ibuf %s, obuf %s, opipe %s, "
@@ -1434,12 +1397,11 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
  * password=<password> (optional)
  * prefix=<query string> (optional) a statement to execute first, if supplied
  *
- * A 401, 500, or 502 error invalidates and releases the session.
+ * A 500 or 502 error invalidates and releases the session.
  *
  * Respond to the client connection as follows:
  * 200 success
  * 400 missing arguments
- * 401 authentication failure
  * 404 session not found
  * 406 SciDB query error
  * 500 out of memory
@@ -1456,8 +1418,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   char save[MAX_VARLEN];
   char SERR[MAX_VARLEN];
   char ID[SESSIONID_LEN];
-  char USER[MAX_VARLEN];
-  char PASS[MAX_VARLEN];
   char *qrybuf, *qry, *prefix;
   struct prep pq;               // prepared query storage
 
@@ -1477,10 +1437,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   mg_get_var (ri->query_string, k, "release", var, MAX_VARLEN);
   if (strlen (var) > 0)
     rel = atoi (var);
-  memset (USER, 0, MAX_VARLEN);
-  memset (PASS, 0, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
   memset (var, 0, MAX_VARLEN);
   s = find_session (ID);
   if (!s)
@@ -1604,34 +1560,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       snprintf (qry, k + MAX_VARLEN, "%s", qrybuf);
     }
 
-  for (int i = 0; i < 2; i++)
-    {
-      if (!s->scidb[i])
-        {
-          syslog (LOG_INFO,
-                  "execute_query[%.*s]: scidbconnect [%d], user %s",
-                  SESSIONID_SHOW_LEN,
-                  s->sessionid,
-                  i,
-                  USER);
-          int status;
-          s->scidb[i] = scidbconnect (SCIDB_HOST,
-                                      SCIDB_PORT,
-                                      strlen (USER) > 0 ? USER : NULL,
-                                      strlen (PASS) > 0 ? PASS : NULL,
-                                      &status);
-          if (!s->scidb[i])
-            {
-              free (qry);
-              free (qrybuf);
-              free (prefix);
-              respond_to_connection_error(conn, status);
-              cleanup_session (s);
-              omp_unset_lock (&s->lock);
-              return;
-            }
-        }
-    }
   syslog (LOG_INFO,
           "execute_query[%.*s]: execute, scidb[0] %p, scidb[1] %p, query %s",
           SESSIONID_SHOW_LEN,

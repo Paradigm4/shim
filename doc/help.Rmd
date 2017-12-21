@@ -229,7 +229,7 @@ shim using either the .deb or .rpm package installer.
 
 ## SciDB authentication
 
-See the `/execute_query` service documentation below.
+If SciDB authentication is enabled, valid `user` and `password` credentials need to be provided as parameters to the `/new_session` request. A SciDB connection is created using the provided credentials. This connection is used for any subsequent `/execute_query` calls, until the session is released using `/release_session` or an HTTP 5xx error (critical error) occurs. The connection and the session remain valid after HTTP 4xx errors (e.g., syntax errors).
 
 
 ## Generic API Workflow
@@ -280,8 +280,6 @@ httr::GET("http://localhost:8080/version")
 - Failure (authentication failure): HTTP 401
 - Failure (SciDB connection failed): HTTP 502
 - Failure (out of resources or server unavailable): HTTP 503
-<tr><td>NOTES <td>
-If applicable, SciDB authentication credentials can be provided at this time (preferred). Otherwise, SciDB credentials can be provided later in the `/execute_query` request. The credentials need to be provided only once per session.
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, engine='bash', comment=NA}
@@ -333,8 +331,6 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **user** _optional_ SciDB authentication user name
-- **password** _optional_ SciDB authentication password
 - **query** AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters
 - **save** optional SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by `read_lines` or `read_bytes`. If the save parameter is not specified, don't save the query output. 
 - **release** optional 0 or 1: if 1 then release_session as soon as query completes. The default value is 0 if not specified (see additional notes below).
@@ -342,7 +338,6 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and SciDB query ID in text/plain payload
 - Failure (missing HTTP arguments): HTTP 400
-- Failure (authentication failure): HTTP 401
 - Failure (session not found): HTTP 404 
 - Failure (SciDB query error): HTTP 406 and SciDB error text in text/plain payload
 - Failure (Shim internal error): HTTP 500 (out of memory)
@@ -352,9 +347,7 @@ Shim only supports AFL queries.
 <p>
 Remember to URL-encode the SciDB query string.
 <p>
-Specify optional user and password information for SciDB authentication.
-<p>
-An HTTP 401, 500, or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
+An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <p>
 This method blocks until the query completes.
 <p>
@@ -395,7 +388,7 @@ See the `examples/scidb_auth.sh` file for a full example.
 ```{r, comment=NA, engine='bash', eval=FALSE}
 # not ran
 id=$(curl -s -k "https://${host}:${port}/new_session")
-curl -f -s -k "https://${host}:${port}/execute_query?id=${id}&prefix=set_namespace('cazart')&query=list()&user=${USER}&password=${PASSWORD}&save=dcsv"
+curl -f -s -k "https://${host}:${port}/execute_query?id=${id}&prefix=set_namespace('cazart')&query=list()&save=dcsv"
 curl -f -s -k "https://${host}:${port}/read_lines?id=${id}&n=0"
 curl -f -s -k "https://${host}:${port}/release_session?id=${id}"
 ```
@@ -408,15 +401,9 @@ curl -f -s -k "https://${host}:${port}/release_session?id=${id}"
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **user** _optional_ SciDB authentication user name
-- **password** _optional_ SciDB authentication password
-<tr><td>NOTES <td>
-<p>
-Specify optional user and password information for SciDB authentication.
 <tr><td>RESPONSE <td>
 - Success: HTTP 200
 - Failure (missing HTTP arguments): HTTP 400
-- Failure (authentication failure): HTTP 401
 - Failure (session not found): HTTP 404 
 - Failure (session has no query): HTTP 409 
 - Failure (could not connect to SciDB): HTTP 502
@@ -424,7 +411,7 @@ Specify optional user and password information for SciDB authentication.
 <td>
 ```{r, comment=NA, eval=FALSE}
 # An example cancellation of a query associated with shim ID 19 (not ran)
-httr::GET("http://localhost:8080/cancel?id=19")
+httr::GET("http://localhost:8080/cancel?id=9v3g5l65mbnks3kh3bi0gb4lobe12fdb")
 ```
 </table>
 
