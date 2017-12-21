@@ -166,6 +166,7 @@ time_t TIMEOUT;                 // session timeout
 
 int USE_AIO;                    //use accelerated io for some saves: 0/1
 
+
 /* copy input string to already-allocated output string, omitting incidences
  * of dot characters. output must have allocated size sufficient to hold the
  * result, a copy of input will do since its size will not exceed that.
@@ -184,6 +185,7 @@ nodots (const char *input, char *output)
     }
   return 0;
 }
+
 
 /*
  * conn: A mongoose client connection
@@ -250,6 +252,7 @@ respond (struct mg_connection *conn, enum mimetype type, int code,
     mg_write (conn, data, (size_t) length);
 }
 
+
 // Retrieve a session pointer from an id, return NULL if not found.
 session *
 find_session (char * id)
@@ -266,6 +269,7 @@ find_session (char * id)
     }
   return ans;
 }
+
 
 /* Cleanup a shim session and reset it to available.
  * Acquire the session lock before invoking this routine.
@@ -312,9 +316,15 @@ cleanup_session (session * s)
   strcpy(s->sessionid, "NA");
 }
 
+
 /* Release a session defined in the client mg_request_info object 'id'
  * variable. Respond to the client connection conn.  Set resp to zero to not
  * respond to client conn, otherwise send http 200 response.
+ *
+ * Respond to the client connection as follows:
+ * 200 success
+ * 400 missing arguments
+ * 404 session not found
  */
 void
 release_session (struct mg_connection *conn, const struct mg_request_info *ri,
@@ -368,6 +378,7 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
     }
 }
 
+
 void respond_to_connection_error(struct mg_connection *conn, int connection_status)
 {
     if(connection_status == SHIM_ERROR_AUTHENTICATION)
@@ -390,9 +401,19 @@ void respond_to_connection_error(struct mg_connection *conn, int connection_stat
       }
 }
 
+
 /* Note: cancel does not trigger a cleanup_session for the session
  * corresponding to the query. The client that initiated the original query is
  * still responsible for session cleanup.
+ *
+ * A 502 error invalidates and releases the session.
+ *
+ * Respond to the client connection as follows:
+ * 200 success
+ * 400 missing arguments
+ * 404 session not found
+ * 409 session has no query
+ * 502 SciDB connection failure
  */
 void
 cancel (struct mg_connection *conn, const struct mg_request_info *ri)
@@ -647,6 +668,7 @@ init_session (session * s)
   return 1;
 }
 
+
 /* Find an available session.  If no sessions are available, return -1.
  * Otherwise, initialize I/O buffers and return the session array index.
  * We acquire the big lock on the session list here--only one thread at
@@ -695,13 +717,17 @@ get_session ()
 }
 
 
-/* Retained for compatibility */
+/* Retained for compatibility
+ *
+ * 200 is returned with no message.
+ */
 void
 login (struct mg_connection *conn)
 {
   respond (conn, plain, 200, 0, NULL);
   return;
 }
+
 
 /* Retained for compatibility
  *
@@ -718,9 +744,10 @@ logout (struct mg_connection *conn)
 /* Client data upload
  * POST data upload to server-side file defined in the session
  * identified by the 'id' variable in the mg_request_info query string.
+ *
  * Respond to the client connection as follows:
  * 200 success, <uploaded filename>\r\n returned in body
- * 400 ERROR invalid data length
+ * 400 missing arguments, empty file
  * 404 session not found
  */
 void
@@ -786,8 +813,10 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
 /* Client file upload
  * POST multipart/file upload to server-side file defined in the session
  * identified by the 'id' variable in the mg_request_info query string.
+ *
  * Respond to the client connection as follows:
  * 200 success, <uploaded filename>\r\n returned in body
+ * 400 missing arguments
  * 404 session not found
  */
 void
@@ -835,15 +864,12 @@ upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
 }
 
 /* Obtain a new session for the mongoose client in conn.
- * Respond as follows:
- * 200 OK
- * session ID
- * --or--
- * 400 ERROR (invalid query auth parameter)
- * 401 ERROR (authentication fail)
- * 503 ERROR (out of resources)
  *
- * An error usually means all the sessions are consumed.
+ * Respond to the client connection as follows:
+ * 200 success
+ * 401 authentication failure
+ * 502 SciDB connection failed
+ * 503 out of resources
  */
 void
 new_session (struct mg_connection *conn, const struct mg_request_info *ri)
@@ -930,11 +956,9 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
 
 
 /* Return shim's version build
- * Respond as follows:
- * 200 OK
- * version ID
  *
- * An error usually means all the sessions are consumed.
+ * Respond to the client connection as follows:
+ * 200 success
  */
 void
 version (struct mg_connection *conn)
@@ -981,6 +1005,16 @@ debug (struct mg_connection *conn)
  * id=<session id>
  * Writes at most n bytes back to the client or a 416 error if something
  * went wrong.
+ *
+ * A 500 error invalidates and releases the session.
+ *
+ * Respond to the client connection as follows:
+ * 200 success
+ * 400 missing arguments
+ * 404 session not found
+ * 410 output not saved
+ * 416 range out of bounds
+ * 500 out of memory, failed to open output buffer, get file status failed
  */
 void
 read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
@@ -1149,7 +1183,6 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
 }
 
 
-
 /* Read ascii lines from a query result on the query pipe.
  * The mg_request_info must contain the keys:
  * n = <max number of lines to read>
@@ -1158,6 +1191,16 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
  * id = <session id>
  * Writes at most n lines back to the client or a 419 error if something
  * went wrong or end of file.
+ *
+ * A 500 error invalidates and releases the session.
+ *
+ * Respond to the client connection as follows:
+ * 200 success
+ * 400 missing arguments
+ * 404 session not found
+ * 410 output not saved
+ * 416 range out of bounds
+ * 500 out of memory, failed to open output buffer
  */
 void
 read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
@@ -1366,6 +1409,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_unset_lock (&s->lock);
 }
 
+
 /* execute_query blocks until the query is complete. However, if stream is
  * specified, execute_query releases the lock and immediately replies to the
  * client with a query ID so that the client can wait for data, then
@@ -1382,8 +1426,16 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
  * password=<password> (optional)
  * prefix=<query string> (optional) a statement to execute first, if supplied
  *
- * Any error that occurs during execute_query that is associated
- * with a valid session ID results in the release of the session.
+ * A 401, 500, or 502 error invalidates and releases the session.
+ *
+ * Respond to the client connection as follows:
+ * 200 success
+ * 400 missing arguments
+ * 401 authentication failure
+ * 404 session not found
+ * 406 SciDB query error
+ * 500 out of memory
+ * 502 SciDB connection failed
  */
 void
 execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
@@ -1763,6 +1815,7 @@ get_log (struct mg_connection *conn)
   mg_send_file (conn, path);
 }
 
+
 /* Mongoose generic begin_request callback; we dispatch URIs to their
  * appropriate handlers.
  */
@@ -1888,11 +1941,13 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
         case 'n':
           SCIDB_HOST = optarg;
           break;
+
         default:
           break;
         }
     }
 }
+
 
 static void
 signalHandler (int sig)
@@ -1912,6 +1967,7 @@ signalHandler (int sig)
   omp_unset_lock (&biglock);
   exit (0);
 }
+
 
 int
 main (int argc, char **argv)
