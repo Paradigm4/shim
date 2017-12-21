@@ -27,7 +27,7 @@ endif
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 
-shim:
+shim: src/shim.c
 	$(MAKE) -C src shim
 	@cp src/shim .
 
@@ -145,13 +145,13 @@ test6: shim
 	@echo "cancel test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cancel.sh
 
-test7: shim
-	@echo "multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
+# test7: shim
+# 	@echo "multiuser streaming test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
 
-test8: shim
-	@echo "repeated multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
+# test8: shim
+# 	@echo "repeated multiuser streaming test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
 
 test9: shim
 	@echo "read_bytes test"
@@ -161,10 +161,10 @@ test9: shim
 # 	@echo "file upload test"
 # 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
 
-test11: shim0
-	@echo "valgrind test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
-	@echo "Now carefully inspect the report in /tmp/valgrind.out"
+# test11: shim0
+# 	@echo "valgrind test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
+# 	@echo "Now carefully inspect the report in /tmp/valgrind.out"
 
 test12: shim
 	@echo "post upload test"
