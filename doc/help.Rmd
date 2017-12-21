@@ -507,31 +507,6 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 </table>
 
 
-### **/upload_file**
-<table>
-<tr><td>DESCRIPTION  <td>Upload a file to the HTTP service using a multipart/file POST method.
-<tr><td>METHOD <td>POST
-<tr><td>PARAMETERS <td>
-- **id** an HTTP session ID obtained from `/new_session`
-- A valid multipart/file POST body -- see the example below
-<tr><td>RESPONSE <td>
-- Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response 
-- Failure (missing HTTP arguments): HTTP 400
-- Failure (session not found): HTTP 404 
-<tr><td>NOTES <td>Try to avoid using this method. It's fairly slow to transfer data and difficult to get the POST
-body message right. Instead use the faster and simpler `/upload` method shown below.
-<tr><td>EXAMPLE (curl)
-<td>
-```{r, engine='bash'}
-# Upload 5 MB of random bytes
-id=$(curl -s  "http://localhost:8080/new_session")
-dd if=/dev/urandom bs=1M count=5  | \
-  curl -s --form "fileupload=@-;filename=data" "http://localhost:8080/upload_file?id=${id}"
-curl -s "http://localhost:8080/release_session?id=${id}"
-```
-</table>
-
-
 ### **/upload**
 <table>
 <tr><td>DESCRIPTION  <td>Upload data to the HTTP service using a basic POST method.

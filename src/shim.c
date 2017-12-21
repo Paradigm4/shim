@@ -819,6 +819,8 @@ upload (struct mg_connection *conn, const struct mg_request_info *ri)
  * 400 missing arguments
  * 404 session not found
  */
+/*
+*** DISCONTINUED ***
 void
 upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
 {
@@ -862,6 +864,8 @@ upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   return;
 }
+*/
+
 
 /* Obtain a new session for the mongoose client in conn.
  *
@@ -1842,8 +1846,10 @@ begin_request_handler (struct mg_connection *conn)
     logout (conn);
   else if (!strcmp (ri->uri, "/release_session"))
     release_session (conn, ri, 1);
+  /*
   else if (!strcmp (ri->uri, "/upload_file"))
     upload_file (conn, ri);
+  */
   else if (!strcmp (ri->uri, "/upload"))
     upload (conn, ri);
   else if (!strcmp (ri->uri, "/read_lines"))

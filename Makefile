@@ -157,9 +157,9 @@ test9: shim
 	@echo "read_bytes test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read_bytes.sh
 
-test10: shim
-	@echo "file upload test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
+# test10: shim
+# 	@echo "file upload test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
 
 test11: shim0
 	@echo "valgrind test"
@@ -186,7 +186,7 @@ test16: shim
 	@echo "read test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read.sh
 
-test: test0 test1 test2 test3 test4 test5 test6 test9 test10 test12 test13 test14 test15 test16
+test: test0 test1 test2 test3 test4 test5 test6 test9 test12 test13 test14 test15 test16
 
 grinder: shim0
 	@echo "multiuser valgrind test"

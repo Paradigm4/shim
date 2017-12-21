@@ -236,7 +236,6 @@ B. W. Lewis <a href="mailto:blewis@paradigm4.com">blewis@paradigm4.com</a>
 <li><a href="#cancel"><strong>/cancel</strong></a></li>
 <li><a href="#read_lines"><strong>/read_lines</strong></a></li>
 <li><a href="#read_bytes"><strong>/read_bytes</strong></a></li>
-<li><a href="#upload_file"><strong>/upload_file</strong></a></li>
 <li><a href="#upload"><strong>/upload</strong></a></li>
 </ul></li>
 </ul></li>
@@ -416,7 +415,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2017-12-21 17:40
+  Date: 2017-12-21 18:08
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -461,19 +460,19 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>33</code></pre>
+<pre><code>73</code></pre>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
-<pre><code>34</code></pre>
+<pre><code>74</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;35&quot;</code></pre>
+<pre><code>[1] &quot;75&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;36&quot;</code></pre>
+<pre><code>[1] &quot;76&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -509,10 +508,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;37&quot;</code></pre>
+<pre><code>[1] &quot;77&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=37]
-  Date: 2017-12-21 17:40
+<pre><code>Response [http://localhost:8080/release_session?id=77]
+  Date: 2017-12-21 18:08
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -591,14 +590,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1513870838482904679&quot;</code></pre>
+<pre><code>[1] &quot;1513872517579797769&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1513870838535277980</code></pre>
+<pre><code>1513872517630792653</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -608,8 +607,8 @@ session = rawToChar(id$content)
 query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=41&amp;query=consume(42)&amp;release=1]
-  Date: 2017-12-21 17:40
+<pre><code>Response [http://localhost:8080/execute_query?id=81&amp;query=consume(42)&amp;release=1]
+  Date: 2017-12-21 18:08
   Status: 500
   Content-Type: text/html
   Size: 279 B
@@ -731,7 +730,7 @@ EXAMPLE (curl)
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=list(&#39;functions&#39;)&amp;save=dcsv&quot;
 curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1513870838638488822{No} name,profile,deterministic,library
+<pre><code>1513872517729339524{No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
 {2} &#39;%&#39;,&#39;int32 %(int32,int32)&#39;,true,&#39;scidb&#39;
@@ -803,60 +802,12 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>15138708387314047250000000                        1                        2
+<pre><code>15138725178195858810000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
 0000060                        7                        8
 0000100                        9                       10
 0000120</code></pre>
-</table>
-</div>
-<div id="upload_file" class="section level3">
-<h3><strong>/upload_file</strong></h3>
-<table>
-<tr>
-<td>
-DESCRIPTION
-<td>
-Upload a file to the HTTP service using a multipart/file POST method.
-<tr>
-<td>
-METHOD
-<td>
-POST
-<tr>
-<td>
-PARAMETERS
-<td>
-<ul>
-<li><strong>id</strong> an HTTP session ID obtained from <code>/new_session</code></li>
-<li>A valid multipart/file POST body – see the example below
-<tr>
-<td>
-RESPONSE
-<td></li>
-<li>Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response</li>
-<li>Failure (missing HTTP arguments): HTTP 400</li>
-<li>Failure (session not found): HTTP 404
-<tr>
-<td>
-NOTES
-<td>
-Try to avoid using this method. It’s fairly slow to transfer data and difficult to get the POST body message right. Instead use the faster and simpler <code>/upload</code> method shown below.
-<tr>
-<td>
-EXAMPLE (curl)
-<td></li>
-</ul>
-<pre class="bash"><code># Upload 5 MB of random bytes
-id=$(curl -s  &quot;http://localhost:8080/new_session&quot;)
-dd if=/dev/urandom bs=1M count=5  | \
-  curl -s --form &quot;fileupload=@-;filename=data&quot; &quot;http://localhost:8080/upload_file?id=${id}&quot;
-curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
-<pre><code>## 5+0 records in
-## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0413986 s, 127 MB/s
-## /tmp/shim_input_buf_eYnHY8</code></pre>
 </table>
 </div>
 <div id="upload" class="section level3">
@@ -907,8 +858,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0306103 s, 171 MB/s
-## /tmp/shim_input_buf_ygpoqC</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0305247 s, 172 MB/s
+## /tmp/shim_input_buf_mL5pVm</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -919,15 +870,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=46]
-##   Date: 2017-12-21 17:40
+<pre><code>## Response [http://localhost:8080/upload?id=85]
+##   Date: 2017-12-21 18:08
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=46]
-##   Date: 2017-12-21 17:40
+<pre><code>## Response [http://localhost:8080/release_session?id=85]
+##   Date: 2017-12-21 18:08
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
