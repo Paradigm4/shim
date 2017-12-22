@@ -27,7 +27,7 @@ endif
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 
-shim: src/shim.c
+shim:
 	$(MAKE) -C src shim
 	@cp src/shim .
 
