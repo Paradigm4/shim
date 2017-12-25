@@ -284,6 +284,8 @@ cleanup_session (session * s)
   s->available = SESSION_AVAILABLE;
   s->qid.queryid = 0;
   s->time = 0;
+  if (s->pf != NULL)
+    fclose (s->pf);
   if (s->pd > 0)
     close (s->pd);
   if (s->ibuf)
@@ -556,6 +558,7 @@ init_session (session * s)
     }
 // Set up the output buffer
   s->pd = 0;
+  s->pf = NULL;
 // Set default behavior to not stream
   s->stream = 0;
   s->save = 0;
@@ -1245,9 +1248,26 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   if (s->pd < 1)
     {
       s->pd = open (s->stream ? s->opipe : s->obuf, O_RDONLY | O_NONBLOCK);
-      if (s->pd > 0)
-        s->pf = fdopen (s->pd, "r");
-      if (s->pd < 1 || !s->pf)
+      if (s->pd < 1)
+        {
+          syslog (LOG_ERR,
+                  "read_lines[%.*s]: ERROR %s",
+                  SESSIONID_SHOW_LEN,
+                  s->sessionid,
+                  MSG_ERR_HTTP_500_BUF);
+          respond (conn,
+                   plain,
+                   HTTP_500_SERVER_ERROR,
+                   strlen (MSG_ERR_HTTP_500_BUF),
+                   MSG_ERR_HTTP_500_BUF);
+          omp_unset_lock (&s->lock);
+          return;
+        }
+    }
+  if (s->pf == NULL)
+    {
+      s->pf = fdopen (s->pd, "r");
+      if (s->pf == NULL)
         {
           syslog (LOG_ERR,
                   "read_lines[%.*s]: ERROR %s",

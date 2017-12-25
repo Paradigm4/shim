@@ -142,5 +142,44 @@ res=$($CURL "$SHIM_URL/release_session?id=$ID")
 test "$res" == "200"
 
 
+## 6. Read bytes then lines from empty result
+## - Prep
+res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
+test "$res" == "200"
+ID=$(<$SHIM_DIR/id)
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=csv")
+test "$res" == "200"
+
+res=$($CURL "$SHIM_URL/read_bytes?id=$ID")
+test "$res" == "200"
+
+res=$($CURL "$SHIM_URL/read_lines?id=$ID")
+test "$res" == "200"
+
+## - Cleanup
+res=$($CURL "$SHIM_URL/release_session?id=$ID")
+test "$res" == "200"
+
+
+## 7. Read n bytes then n lines from empty result
+## - Prep
+res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
+test "$res" == "200"
+ID=$(<$SHIM_DIR/id)
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=csv")
+test "$res" == "200"
+err="EOF - range out of bounds416"
+
+res=$($CURL "$SHIM_URL/read_bytes?id=$ID&n=10")
+test "$res" == "$err"
+
+res=$($CURL "$SHIM_URL/read_lines?id=$ID&n=10")
+test "$res" == "$err"
+
+## - Cleanup
+res=$($CURL "$SHIM_URL/release_session?id=$ID")
+test "$res" == "200"
+
+
 echo "PASS"
 exit 0
