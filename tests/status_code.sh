@@ -34,8 +34,8 @@ sleep 1
 
 ## 1. HTTP 400 Bad Request
 err="HTTP arguments missing400"
-res=$($CURL "$SHIM_URL/upload_file")
-test "$res" == "$err"
+# res=$($CURL "$SHIM_URL/upload_file")
+# test "$res" == "$err"
 
 res=$($CURL "$SHIM_URL/upload")
 test "$res" == "$err"
@@ -78,7 +78,7 @@ test "$res" == "200"
 
 ## 2. HTTP 401 Unauthorized
 ## - Shim
-res=$(curl --write-out %{http_code} --silent "$SHIM_URL/get_version")
+res=$(curl --write-out %{http_code} --silent "$SHIM_URL/version")
 test "$res" == "401"
 
 ## - SciDB
@@ -109,8 +109,8 @@ test "$res" == "403"
 err="Session not found404"
 id_bad=INVALID
 
-res=$($CURL "$SHIM_URL/upload_file?id=$id_bad")
-test "$res" == "$err"
+# res=$($CURL "$SHIM_URL/upload_file?id=$id_bad")
+# test "$res" == "$err"
 
 res=$($CURL "$SHIM_URL/upload?id=$id_bad")
 test "$res" == "$err"
@@ -138,8 +138,8 @@ ID=$(<$SHIM_DIR/id)
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&release=1")
 test "$res" == "200"
 
-res=$($CURL "$SHIM_URL/upload_file?id=$ID")
-test "$res" == "$err"
+# res=$($CURL "$SHIM_URL/upload_file?id=$ID")
+# test "$res" == "$err"
 
 res=$($CURL "$SHIM_URL/upload?id=$ID")
 test "$res" == "$err"

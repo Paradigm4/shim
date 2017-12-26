@@ -145,26 +145,26 @@ test6: shim
 	@echo "cancel test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cancel.sh
 
-test7: shim
-	@echo "multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
+# test7: shim
+# 	@echo "multiuser streaming test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
 
-test8: shim
-	@echo "repeated multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
+# test8: shim
+# 	@echo "repeated multiuser streaming test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
 
 test9: shim
 	@echo "read_bytes test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read_bytes.sh
 
-test10: shim
-	@echo "file upload test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
+# test10: shim
+# 	@echo "file upload test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
 
-test11: shim0
-	@echo "valgrind test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
-	@echo "Now carefully inspect the report in /tmp/valgrind.out"
+# test11: shim0
+# 	@echo "valgrind test"
+# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
+# 	@echo "Now carefully inspect the report in /tmp/valgrind.out"
 
 test12: shim
 	@echo "post upload test"
@@ -182,7 +182,11 @@ test15: shim
 	@echo "status code test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/status_code.sh
 
-test: test0 test1 test2 test3 test4 test5 test6 test9 test10 test12 test13 test14 test15
+test16: shim
+	@echo "read test"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read.sh
+
+test: test0 test1 test2 test3 test4 test5 test6 test9 test12 test13 test14 test15 test16
 
 grinder: shim0
 	@echo "multiuser valgrind test"

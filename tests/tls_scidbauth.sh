@@ -22,8 +22,8 @@ openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=MA/L=W
 ./shim -p ${port}s -r $td/wwwroot  -f &
 sleep 1
 
-id=$(curl -f -s -k "https://${host}:${port}/new_session" | sed -e "s/.*//")
-curl -s -f -k "https://${host}:${port}/execute_query?id=${id}&query=list('functions')&save=dcsv&user=root&password=Paradigm4" > /dev/null || fail
+id=$(curl -f -s -k "https://${host}:${port}/new_session?user=root&password=Paradigm4" | sed -e "s/.*//")
+curl -s -f -k "https://${host}:${port}/execute_query?id=${id}&query=list('functions')&save=dcsv" > /dev/null || fail
 curl -s -f -k "https://${host}:${port}/read_lines?id=${id}&n=0" > /dev/null || fail
 curl -f -k "https://${host}:${port}/release_session?id=${id}" || fail
 echo "OK"
