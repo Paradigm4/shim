@@ -42,15 +42,17 @@
 #include "base64.h"
 #include "client.h"
 
-#define DEFAULT_MAX_SESSIONS 50   // Maximum number of concurrent http sessions
-#define MAX_VARLEN 4096           // Static buffer length
-#define LCSV_MAX 16384
-#define SESSIONID_LEN      32 + 1 // Length of a session ID
-#define SESSIONID_SHOW_LEN 6      // Session ID prefix to show in the log
+#define DEFAULT_MAX_SESSIONS 50      // Maximum number of concurrent http sessions
+#define MAX_VARLEN           4096    // Static buffer length
+#define LCSV_MAX             16384
+#define SESSIONID_LEN        32 + 1  // Length of a session ID
+#define SESSIONID_SHOW_LEN   6       // Session ID prefix to show in the log
+#define SAVE_BIN             1       // Saved in binary format
+#define SAVE_TXT             2       // Saved in text format
 #ifndef PATH_MAX
-#define PATH_MAX 4096
+#define PATH_MAX             4096
 #endif
-#define MAX_RETURN_BYTES INT_MAX
+#define MAX_RETURN_BYTES     INT_MAX
 
 #ifndef DEFAULT_HTTP_PORT
 #define DEFAULT_HTTP_PORT "8080,8083s"
@@ -87,7 +89,9 @@
 #define MSG_ERR_HTTP_404     "Session not found"
 #define MSG_ERR_HTTP_409     "Session has no query"
 #define MSG_ERR_HTTP_410     "Output not saved"
-#define MSG_ERR_HTTP_416     "EOF - range out of bounds"
+#define MSG_ERR_HTTP_416_BIN "Output not saved in binary format"
+#define MSG_ERR_HTTP_416_TXT "Output not saved in text format"
+#define MSG_ERR_HTTP_416_EOF "EOF - range out of bounds"
 // -- - HTTP 5xx Error Messages
 #define MSG_ERR_HTTP_500_OOM "Out of memory"
 #define MSG_ERR_HTTP_500_BUF "Open output buffer failed"
@@ -114,6 +118,8 @@ typedef struct
   FILE *pf;                      //   and FILE pointer
   int stream;                    // non-zero if output streaming enabled (DISABLED)
   int save;                      // non-zero if output is to be saved/streamed
+                                 // set to SAVE_BIN for binary
+                                 // set to SAVE_TXT for text
   int compression;               // gzip compression level for stream
   char *ibuf;                    // input buffer name
   char *obuf;                    // output (file) buffer name ////
@@ -988,6 +994,7 @@ debug (struct mg_connection *conn)
  * 404 session not found
  * 410 output not saved
  * 416 range out of bounds
+ * 416 output not saved in binary format
  * 500 out of memory, failed to open output buffer, get file status failed
  */
 void
@@ -1036,6 +1043,20 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_410_GONE,
                strlen (MSG_ERR_HTTP_410),
                MSG_ERR_HTTP_410);
+      return;
+    }
+  if (s->save != SAVE_BIN)
+    {
+      syslog (LOG_ERR,
+              "read_bytes[%.*s]: ERROR %s",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              MSG_ERR_HTTP_416_BIN);
+      respond (conn,
+               plain,
+               HTTP_416_NOT_SATISFIABLE,
+               strlen (MSG_ERR_HTTP_416_BIN),
+               MSG_ERR_HTTP_416_BIN);
       return;
     }
   omp_set_lock (&s->lock);
@@ -1141,12 +1162,12 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
               "read_bytes[%.*s]: ERROR %s",
               SESSIONID_SHOW_LEN,
               s->sessionid,
-              MSG_ERR_HTTP_416);
+              MSG_ERR_HTTP_416_EOF);
       respond (conn,
                plain,
                HTTP_416_NOT_SATISFIABLE,
-               strlen (MSG_ERR_HTTP_416),
-               MSG_ERR_HTTP_416);
+               strlen (MSG_ERR_HTTP_416_EOF),
+               MSG_ERR_HTTP_416_EOF);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1174,6 +1195,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
  * 404 session not found
  * 410 output not saved
  * 416 range out of bounds
+ * 416 output not saved in text format
  * 500 out of memory, failed to open output buffer
  */
 void
@@ -1223,6 +1245,20 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_410_GONE,
                strlen (MSG_ERR_HTTP_410),
                MSG_ERR_HTTP_410);
+      return;
+    }
+  if (s->save != SAVE_TXT)
+    {
+      syslog (LOG_ERR,
+              "read_bytes[%.*s]: ERROR %s",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              MSG_ERR_HTTP_416_TXT);
+      respond (conn,
+               plain,
+               HTTP_416_NOT_SATISFIABLE,
+               strlen (MSG_ERR_HTTP_416_TXT),
+               MSG_ERR_HTTP_416_TXT);
       return;
     }
 // Retrieve max number of lines to read
@@ -1384,12 +1420,12 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
               "read_lines[%.*s]: ERROR %s",
               SESSIONID_SHOW_LEN,
               s->sessionid,
-              MSG_ERR_HTTP_416);
+              MSG_ERR_HTTP_416_EOF);
       respond (conn,
                plain,
                HTTP_416_NOT_SATISFIABLE,
-               strlen (MSG_ERR_HTTP_416),
-               MSG_ERR_HTTP_416);
+               strlen (MSG_ERR_HTTP_416_EOF),
+               MSG_ERR_HTTP_416_EOF);
     }
   else
     {
@@ -1554,7 +1590,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 // If save is indicated, modify query
   if (strlen (save) > 0)
     {
-      s->save = 1;
+      if (save[0] == '(')
+        {
+          s->save = SAVE_BIN;
+        }
+      else
+        {
+          s->save = SAVE_TXT;
+        }
       if (USE_AIO == 1
           && (save[0] == '(' || strcmp (save, "csv+") == 0
               || strcmp (save, "lcsv+") == 0))
@@ -1573,9 +1616,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   else
     {
       /* s->save is initalized with 0. Do no reset it to 0 here. If it
-         was set to 1 by a previous execute_query, let it stay set to
-         1. This way the prevously saved output is still available
-         even if other queries were executed since then. */
+         was set to non zero by a previous execute_query, let it stay
+         set to non zero. This way the prevously saved output is still
+         available even if other queries were executed since then. */
       // s->save = 0;
       snprintf (qry, k + MAX_VARLEN, "%s", qrybuf);
     }

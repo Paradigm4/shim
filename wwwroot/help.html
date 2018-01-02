@@ -197,7 +197,7 @@ $(document).ready(function () {
 B. W. Lewis <a href="mailto:blewis@paradigm4.com">blewis@paradigm4.com</a>
 </div></em></h4>
 <h4 class="date"><em><div style="font-size: 0.7em">
-11/9/2015
+2/1/2018
 </div></em></h4>
 
 </div>
@@ -415,7 +415,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2017-12-21 18:57
+  Date: 2018-01-02 21:43
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -506,7 +506,7 @@ EXAMPLE (R)
 <pre><code>[1] &quot;9v3g5l65mbnks3kh3bi0gb4lobe12fdb&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
 <pre><code>Response [http://localhost:8080/release_session?id=9v3g5l65mbnks3kh3bi0gb4lobe12fdb]
-  Date: 2017-12-21 18:57
+  Date: 2018-01-02 21:43
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -557,7 +557,7 @@ NOTES
 <td>
 Shim only supports AFL queries.
 <p>
-Remember to URL-encode the SciDB query string.
+Remember to URL-encode the SciDB query string and special characters like the plus sign (+) in the request.
 <p>
 An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <p>
@@ -580,14 +580,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1513875460780217716&quot;</code></pre>
+<pre><code>[1] &quot;1514925788550951487&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1513875460829681712</code></pre>
+<pre><code>1514925788600655850</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -598,7 +598,7 @@ query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consum
                 session)
 httr::GET(query)</code></pre>
 <pre><code>Response [http://localhost:8080/execute_query?id=c8gu6hws62wx6w0c8nfakzxz9ap2g37t&amp;query=consume(42)&amp;release=1]
-  Date: 2017-12-21 18:57
+  Date: 2018-01-02 21:43
   Status: 406
   Content-Type: text/html
   Size: 279 B
@@ -678,7 +678,7 @@ PARAMETERS
 <td>
 <ul>
 <li><strong>id</strong> an HTTP session ID obtained from <code>/new_session</code></li>
-<li><strong>n</strong> the maximum number of lines to read and return between 0 and 2147483647.
+<li><strong>n</strong> the maximum number of lines to read and return between 0 and 2147483647. Default is 0.
 <tr>
 <td>
 RESPONSE
@@ -688,6 +688,7 @@ RESPONSE
 <li>Failure (session not found): HTTP 404</li>
 <li>Failure (output not saved): HTTP 410</li>
 <li>Failure (range out of bounds): HTTP 416</li>
+<li>Failure (output not saved in text format): HTTP 416</li>
 <li>Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer)
 <tr>
 <td>
@@ -695,11 +696,9 @@ NOTES
 <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n&gt;0, iterative requests to <code>read_lines</code> are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don’t use this option if you can avoid it.
 <p>
-Note that query results are <em>always</em> returned as application/octet-stream.
+Note that query results are <em>always</em> returned as application/octet-stream. <code>/read_lines</code> can only be used if the result was saved in text format.
 <p>
 An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <tr>
@@ -707,11 +706,20 @@ An HTTP 500 error will invalidate the session and free the related resources. An
 EXAMPLE (curl)
 <td></li>
 </ul>
-<pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
+<pre class="bash"><code># Obtain a new shim session ID
+s=`curl -s &quot;http://localhost:8080/new_session&quot;`
+
+# The URL-encoded SciDB query in the next line is just:
+# list(&#39;functions&#39;)
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=list(&#39;functions&#39;)&amp;save=dcsv&quot;
+echo
+
 curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
+
+# Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1513875460940943732{No} name,profile,deterministic,library
+<pre><code>1514925788705340885
+{No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
 {2} &#39;%&#39;,&#39;int32 %(int32,int32)&#39;,true,&#39;scidb&#39;
@@ -752,6 +760,7 @@ RESPONSE
 <li>Failure (session not found): HTTP 404</li>
 <li>Failure (output not saved): HTTP 410</li>
 <li>Failure (range out of bounds): HTTP 416</li>
+<li>Failure (output not saved in binary format): HTTP 416</li>
 <li>Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer, get file status failed)
 <tr>
 <td>
@@ -759,11 +768,9 @@ NOTES
 <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n&gt;0, iterative requests to <code>read_bytes</code> are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don’t use this option if you can avoid it.
 <p>
-Note that query results are <em>always</em> returned as application/octet-stream.
+Note that query results are <em>always</em> returned as application/octet-stream. <code>/read_bytes</code> can only be used if the result was saved in binary format.
 <p>
 An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <tr>
@@ -777,13 +784,15 @@ s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 # The URL-encoded SciDB query in the next line is just:
 # build(&lt;x:double&gt;[i=1:10,10,0],u)
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=build(%3Cx:double%3E%5Bi=1:10,10,0%5D,i)&amp;save=(double)&quot;
+echo
 
 # Pass the double-precision binary result through the `od` program to view:
 curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>15138754610276770840000000                        1                        2
+<pre><code>1514925788795664711
+0000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
 0000060                        7                        8
@@ -839,8 +848,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0303082 s, 173 MB/s
-## /tmp/shim_input_buf_n7OekC</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0330269 s, 159 MB/s
+## /tmp/shim_input_buf_FMoJwS</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -852,14 +861,14 @@ session = rawToChar(id$content)
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
 <pre><code>## Response [http://localhost:8080/upload?id=5vk1d26f4yy2kpucop4o6icc1kf118u6]
-##   Date: 2017-12-21 18:57
+##   Date: 2018-01-02 21:43
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
 <pre><code>## Response [http://localhost:8080/release_session?id=5vk1d26f4yy2kpucop4o6icc1kf118u6]
-##   Date: 2017-12-21 18:57
+##   Date: 2018-01-02 21:43
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
