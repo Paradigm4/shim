@@ -296,6 +296,11 @@ cleanup_session (session * s)
     close (s->pd);
   if (s->ibuf)
     {
+      syslog (LOG_INFO,
+              "cleanup_session[%.*s]: unlinking ibuf %p",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              s->ibuf);
       unlink (s->ibuf);
       free (s->ibuf);
       s->ibuf = NULL;
@@ -303,7 +308,7 @@ cleanup_session (session * s)
   if (s->obuf)
     {
       syslog (LOG_INFO,
-              "cleanup_session[%.*s]: unlinking %p",
+              "cleanup_session[%.*s]: unlinking obuf %p",
               SESSIONID_SHOW_LEN,
               s->sessionid,
               s->obuf);
@@ -313,7 +318,7 @@ cleanup_session (session * s)
     }
   if (s->opipe)
     {
-      syslog (LOG_INFO, "cleanup_session[%.*s]: unlinking %p",
+      syslog (LOG_INFO, "cleanup_session[%.*s]: unlinking opipe %p",
               SESSIONID_SHOW_LEN,
               s->sessionid,
               s->opipe);
