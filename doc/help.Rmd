@@ -1,7 +1,7 @@
 ---
 title: "shim: A Simple HTTP Service for SciDB"
 author: "<div style='font-size: 0.7em'>B. W. Lewis <blewis@paradigm4.com></div>"
-date: "<div style='font-size: 0.7em'>11/9/2015</div>"
+date: "<div style='font-size: 0.7em'>2/1/2018</div>"
 output:
   html_document:
     toc: true
@@ -345,7 +345,7 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 <tr><td>NOTES <td>
 Shim only supports AFL queries. 
 <p>
-Remember to URL-encode the SciDB query string.
+Remember to URL-encode the SciDB query string and special characters like the plus sign (+) in the request.
 <p>
 An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <p>
@@ -422,30 +422,37 @@ httr::GET("http://localhost:8080/cancel?id=9v3g5l65mbnks3kh3bi0gb4lobe12fdb")
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **n**  the maximum number of lines to read and return between 0 and 2147483647.
+- **n**  the maximum number of lines to read and return between 0 and 2147483647. Default is 0.
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and application/octet-stream query result (up to n lines) 
 - Failure (missing HTTP arguments): HTTP 400
 - Failure (session not found): HTTP 404 
 - Failure (output not saved): HTTP 410 
 - Failure (range out of bounds): HTTP 416 
+- Failure (output not saved in text format): HTTP 416 
 - Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer)
 <tr><td>NOTES <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n>0, iterative requests to `read_lines` are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don't use this option if you can avoid it.
 <p>
-Note that query results are _always_ returned as application/octet-stream.
+Note that query results are _always_ returned as application/octet-stream. `/read_lines` can only be used if the result was saved in text format.
 <p>
 An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, comment=NA, engine='bash'}
+# Obtain a new shim session ID
 s=`curl -s "http://localhost:8080/new_session"`
+
+# The URL-encoded SciDB query in the next line is just:
+# list('functions')
 curl -s "http://localhost:8080/execute_query?id=${s}&query=list('functions')&save=dcsv"
+echo
+
 curl -s "http://localhost:8080/read_lines?id=${s}&n=10"
+
+# Release the session
 curl -s "http://localhost:8080/release_session?id=${s}"
 ```
 </table>
@@ -464,15 +471,14 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 - Failure (session not found): HTTP 404 
 - Failure (output not saved): HTTP 410 
 - Failure (range out of bounds): HTTP 416 
+- Failure (output not saved in binary format): HTTP 416 
 - Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer, get file status failed)
 <tr><td>NOTES <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n>0, iterative requests to `read_bytes` are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don't use this option if you can avoid it.
 <p>
-Note that query results are _always_ returned as application/octet-stream.
+Note that query results are _always_ returned as application/octet-stream. `/read_bytes` can only be used if the result was saved in binary format.
 <p>
 An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <tr><td>EXAMPLE (curl)
@@ -484,6 +490,7 @@ s=`curl -s "http://localhost:8080/new_session"`
 # The URL-encoded SciDB query in the next line is just:
 # build(<x:double>[i=1:10,10,0],u)
 curl -s "http://localhost:8080/execute_query?id=${s}&query=build(%3Cx:double%3E%5Bi=1:10,10,0%5D,i)&save=(double)"
+echo
 
 # Pass the double-precision binary result through the `od` program to view:
 curl -s "http://localhost:8080/read_bytes?id=${s}" | od -t f8
