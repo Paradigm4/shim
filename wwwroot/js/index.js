@@ -112,7 +112,7 @@ var result="";
 $.get(
   "/new_session?auth="+getCookie("authtok"),
   function(data){
-    x = parseInt(data); // session ID
+    x = data; // session ID
     var q = encodeURIComponent(sq);
     var urix = "/execute_query?id="+x+"&query="+q+"&save=dcsv"+"&auth="+getCookie("authtok");
     var urir = "/read_lines?id="+x+"&n="+numlines+"&auth="+getCookie("authtok");
