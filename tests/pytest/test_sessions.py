@@ -1,4 +1,4 @@
-## Python 3
+# Python 3
 
 import pytest
 import requests
@@ -17,7 +17,6 @@ def test_new_session(i):
                        params={'id': id})
     assert req.status_code == 200
     assert req.text == ''
-
 
 
 @pytest.mark.parametrize('i', range(10))
