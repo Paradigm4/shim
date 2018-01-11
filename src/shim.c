@@ -1935,7 +1935,8 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
           exit (0);
           break;
         case 'v':
-          printf ("%s\n", VERSION);
+          printf ("SciDB Version: %s\n", VERSION);
+          printf ("Shim Commit: %s\n", COMMIT);
           exit (0);
           break;
         case 'f':
