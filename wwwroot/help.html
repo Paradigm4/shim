@@ -416,7 +416,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2018-01-06 14:22
+  Date: 2018-01-10 20:55
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -507,7 +507,7 @@ EXAMPLE (R)
 <pre><code>[1] &quot;67we0fep9qbtwxrgyaygk96g1hx7hih3&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
 <pre><code>Response [http://localhost:8080/release_session?id=67we0fep9qbtwxrgyaygk96g1hx7hih3]
-  Date: 2018-01-06 14:22
+  Date: 2018-01-10 20:55
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -581,14 +581,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1515277369109548023&quot;</code></pre>
+<pre><code>[1] &quot;1515646548397324502&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1515277369169400608</code></pre>
+<pre><code>1515646548457817863</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -599,7 +599,7 @@ query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consum
                 session)
 httr::GET(query)</code></pre>
 <pre><code>Response [http://localhost:8080/execute_query?id=7fbidslq9y2ah2x2yd6lz62xzhizk328&amp;query=consume(42)&amp;release=1]
-  Date: 2018-01-06 14:22
+  Date: 2018-01-10 20:55
   Status: 406
   Content-Type: text/html
   Size: 279 B
@@ -719,7 +719,7 @@ curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1515277369273729150
+<pre><code>1515646548556496592
 {No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
@@ -792,7 +792,7 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1515277369361226310
+<pre><code>1515646548641196714
 0000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
@@ -849,8 +849,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0302785 s, 173 MB/s
-## /tmp/shim_input_buf_tNU5jX</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0266968 s, 196 MB/s
+## /tmp/shim_input_buf_me8sNN</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -862,14 +862,14 @@ session = rawToChar(id$content)
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
 <pre><code>## Response [http://localhost:8080/upload?id=suu39hxr789m5j15bfcqpcco6aro6noz]
-##   Date: 2018-01-06 14:22
+##   Date: 2018-01-10 20:55
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
 <pre><code>## Response [http://localhost:8080/release_session?id=suu39hxr789m5j15bfcqpcco6aro6noz]
-##   Date: 2018-01-06 14:22
+##   Date: 2018-01-10 20:55
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
@@ -887,7 +887,7 @@ httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, sessi
 </ul>
 <p>The above scheme is called lazy as sessions are only harvested when a new session request is unable to be satisfied. Until that event occurs, sessions are free to last indefinitely.</p>
 <p>Shim does not protect against uploading gigantic files nor from running many long-running SciDB queries. The service may become unavailable if too many query and/or upload operations are in flight; an HTTP 503 (Service Unavailable) error code is returned in that case.</p>
-<p>Copyright (C) 2016-2017, Paradigm4.</p>
+<p>Copyright (C) 2016-2018, Paradigm4.</p>
 </div>
 
 
