@@ -100,6 +100,12 @@
 #define MSG_ERR_HTTP_503     "Out of resources"
 // -- -
 
+// SciDB errors which trigger a 5xx Shim error
+char *SCIDB_CONNECTION_ERR[] = {
+    "SCIDB_LE_CANT_SEND_RECEIVE",
+    "SCIDB_LE_CONNECTION_ERROR",
+    "SCIDB_LE_NO_QUORUM"};
+
 // characters allowed in session IDs
 char SESSIONID_CHARSET[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -395,6 +401,35 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
 }
 
 
+void respond_to_query_error(struct mg_connection *conn,
+                            session *session,
+                            const char *scidb_error)
+{
+  int is_critical = 0;
+  for (int i = 0;
+       i < sizeof(SCIDB_CONNECTION_ERR) / sizeof(SCIDB_CONNECTION_ERR[0]);
+       i++)
+    if (strstr(scidb_error, SCIDB_CONNECTION_ERR[i]) != NULL)
+      is_critical = 1;
+
+  if (is_critical == 1)
+    {
+      respond (conn,
+               plain,
+               HTTP_502_BAD_GATEWAY,
+               strlen (scidb_error),
+               scidb_error);
+      cleanup_session(session);
+    }
+  else
+    {
+      respond (conn,
+               plain,
+               HTTP_406_NOT_ACCEPTABLE,
+               strlen (scidb_error),
+               scidb_error);
+    }
+}
 
 
 /* Note: cancel does not trigger a cleanup_session for the session
@@ -1662,11 +1697,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                        SESSIONID_SHOW_LEN,
                        s->sessionid,
                        SERR);
-               respond (conn,
-                        plain,
-                        HTTP_406_NOT_ACCEPTABLE,
-                        strlen (SERR),
-                        SERR);
+               respond_to_query_error(conn, s, SERR);
                omp_unset_lock (&s->lock);
                return;
              }
@@ -1688,11 +1719,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                        SESSIONID_SHOW_LEN,
                        s->sessionid,
                        SERR);
-               respond (conn,
-                        plain,
-                        HTTP_406_NOT_ACCEPTABLE,
-                        strlen (SERR),
-                        SERR);
+               respond_to_query_error(conn, s, SERR);
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1716,7 +1743,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               SESSIONID_SHOW_LEN,
               s->sessionid,
               SERR);
-      respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
+      respond_to_query_error(conn, s, SERR);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1751,7 +1778,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               s->sessionid,
               SERR);
       if (!stream)
-        respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
+        respond_to_query_error(conn, s, SERR);
       omp_unset_lock (&s->lock);
       return;
     }
