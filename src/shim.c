@@ -210,8 +210,11 @@ nodots (const char *input, char *output)
  * <DATA>
  */
 void
-respond (struct mg_connection *conn, enum mimetype type, int code,
-         size_t length, char *data)
+respond (struct mg_connection *conn,
+         const enum mimetype type,
+         const int code,
+         const size_t length,
+         const char *data)
 {
   if (code != 200)              // error
     {
@@ -392,27 +395,6 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
 }
 
 
-void respond_to_connection_error(struct mg_connection *conn, int connection_status)
-{
-    if(connection_status == SHIM_ERROR_AUTHENTICATION)
-      {
-        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_401);
-        respond (conn,
-                 plain,
-                 HTTP_401_UNAUTHORIZED,
-                 strlen (MSG_ERR_HTTP_401),
-                 MSG_ERR_HTTP_401);
-      }
-    else
-      {
-        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_502);
-        respond (conn,
-                 plain,
-                 HTTP_502_BAD_GATEWAY,
-                 strlen (MSG_ERR_HTTP_502),
-                 MSG_ERR_HTTP_502);
-      }
-}
 
 
 /* Note: cancel does not trigger a cleanup_session for the session
@@ -907,9 +889,25 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
                                       &status);
           if (!s->scidb[i])
             {
-              respond_to_connection_error (conn, status);
+              if(status == SHIM_ERROR_AUTHENTICATION)
+                {
+                  syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_401);
+                  respond (conn,
+                           plain,
+                           HTTP_401_UNAUTHORIZED,
+                           strlen (MSG_ERR_HTTP_401),
+                           MSG_ERR_HTTP_401);
+                }
+              else
+                {
+                  syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_502);
+                  respond (conn,
+                           plain,
+                           HTTP_502_BAD_GATEWAY,
+                           strlen (MSG_ERR_HTTP_502),
+                           MSG_ERR_HTTP_502);
+                }
               cleanup_session (s);
-              omp_unset_lock (&s->lock);
               return;
             }
         }
