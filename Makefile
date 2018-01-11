@@ -5,24 +5,6 @@ ifeq ($(SCIDB),)
     SCIDB := $(shell dirname ${X})
   endif
 endif
-VERSION := $(shell scidb --version | head -n 1 | cut -d ':' -f 2 |tr -d ' ')
-
-CFLAGS=-std=gnu99 -fopenmp -g -pedantic -DVERSION=\"$(VERSION)\"
-INC=-I. -DPROJECT_ROOT="\"$(SCIDB)\"" -I"$(SCIDB)/3rdparty/boost/include/" -I"$(SCIDB)/include" -I"$(SCIDB)/3rdparty/boost/include/boost/container" -DSCIDB_CLIENT
-LIBS=-lstdc++ -ldl -lz -lpthread -L"$(SCIDB)/3rdparty/boost/lib" -L"$(SCIDB)/lib" -lscidbclient -lboost_system -lpam -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN:$$ORIGIN/../lib:$$ORIGIN/../../:$(SCIDB)/3rdparty/boost/lib:'
-
-# Compiler settings for SciDB version >= 15.7
-ifneq ("$(wildcard /usr/bin/g++-4.9)","")
-  CC := "/usr/bin/gcc-4.9"
-  CXX := "/usr/bin/g++-4.9"
-  CXXFLAGS=-std=c++11
-else
-  ifneq ("$(wildcard /opt/rh/devtoolset-3/root/usr/bin/gcc)","")
-    CC := "/opt/rh/devtoolset-3/root/usr/bin/gcc"
-    CXX := "/opt/rh/devtoolset-3/root/usr/bin/g++"
-    CXXFLAGS=-std=c++11
-  endif
-endif
 
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
@@ -186,7 +168,11 @@ test16: shim
 	@echo "read test"
 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read.sh
 
-test: test0 test1 test2 test3 test4 test5 test6 test9 test12 test13 test14 test15 test16
+test17: shim
+	@echo "crash test"
+	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/crash.sh
+
+test: test0 test1 test2 test3 test4 test5 test6 test9 test12 test13 test14 test15 test16 test17
 
 grinder: shim0
 	@echo "multiuser valgrind test"

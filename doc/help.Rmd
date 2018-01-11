@@ -558,4 +558,4 @@ The above scheme is called lazy as sessions are only harvested when a new sessio
 Shim does not protect against uploading gigantic files nor from running many long-running SciDB queries. The service may become unavailable if too many query and/or upload operations are in flight; an HTTP 503 (Service Unavailable) error code is returned in that case.
 
 
-Copyright (C) 2016-2017, Paradigm4.
+Copyright (C) 2016-2018, Paradigm4.

@@ -1,4 +1,4 @@
-## Python 3
+# Python 3
 
 import pytest
 import requests
@@ -7,25 +7,24 @@ import os
 from settings import *
 
 
-## py.test -n N
+# py.test -n N
 N = int(os.environ.get('PYTEST_XDIST_WORKER_COUNT'))
 
 
-queries = (
-"""store(
-     build(<x:int64>[i=1:{sz}], i),
-     ar_{qid}_{sid})""",
-"""store(
-     apply(
-       build(<x:int64>[i=1:{sz}], i),
-       y, x * x),
-     ar_{qid}_{sid})""",
-"""store(
-     cross_join(
-       build(<x:int64>[i=1:{sz}], i),
-       build(<y:double>[i=1:{sz}], i * i)),
-     ar_{qid}_{sid})""",
-)
+queries = ("""
+store(
+  build(<x:int64>[i=1:{sz}], i),
+  ar_{qid}_{sid})""", """
+store(
+  apply(
+    build(<x:int64>[i=1:{sz}], i),
+    y, x * x),
+  ar_{qid}_{sid})""", """
+store(
+  cross_join(
+    build(<x:int64>[i=1:{sz}], i),
+    build(<y:double>[i=1:{sz}], i * i)),
+  ar_{qid}_{sid})""")
 
 
 @pytest.fixture()

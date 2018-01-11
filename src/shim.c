@@ -2,7 +2,7 @@
 **
 * BEGIN_COPYRIGHT
 *
-* Copyright (C) 2008-2016 Paradigm4, Inc.
+* Copyright (C) 2008-2018 Paradigm4, Inc.
 *
 * shim is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
@@ -99,6 +99,12 @@
 #define MSG_ERR_HTTP_502     "SciDB connection failed"
 #define MSG_ERR_HTTP_503     "Out of resources"
 // -- -
+
+// SciDB errors which trigger a 5xx Shim error
+char *SCIDB_CONNECTION_ERR[] = {
+    "SCIDB_LE_CANT_SEND_RECEIVE",
+    "SCIDB_LE_CONNECTION_ERROR",
+    "SCIDB_LE_NO_QUORUM"};
 
 // characters allowed in session IDs
 char SESSIONID_CHARSET[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -210,8 +216,11 @@ nodots (const char *input, char *output)
  * <DATA>
  */
 void
-respond (struct mg_connection *conn, enum mimetype type, int code,
-         size_t length, char *data)
+respond (struct mg_connection *conn,
+         const enum mimetype type,
+         const int code,
+         const size_t length,
+         const char *data)
 {
   if (code != 200)              // error
     {
@@ -392,26 +401,34 @@ release_session (struct mg_connection *conn, const struct mg_request_info *ri,
 }
 
 
-void respond_to_connection_error(struct mg_connection *conn, int connection_status)
+void respond_to_query_error(struct mg_connection *conn,
+                            session *session,
+                            const char *scidb_error)
 {
-    if(connection_status == SHIM_ERROR_AUTHENTICATION)
-      {
-        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_401);
-        respond (conn,
-                 plain,
-                 HTTP_401_UNAUTHORIZED,
-                 strlen (MSG_ERR_HTTP_401),
-                 MSG_ERR_HTTP_401);
-      }
-    else
-      {
-        syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_502);
-        respond (conn,
-                 plain,
-                 HTTP_502_BAD_GATEWAY,
-                 strlen (MSG_ERR_HTTP_502),
-                 MSG_ERR_HTTP_502);
-      }
+  int is_critical = 0;
+  for (int i = 0;
+       i < sizeof(SCIDB_CONNECTION_ERR) / sizeof(SCIDB_CONNECTION_ERR[0]);
+       i++)
+    if (strstr(scidb_error, SCIDB_CONNECTION_ERR[i]) != NULL)
+      is_critical = 1;
+
+  if (is_critical == 1)
+    {
+      respond (conn,
+               plain,
+               HTTP_502_BAD_GATEWAY,
+               strlen (scidb_error),
+               scidb_error);
+      cleanup_session(session);
+    }
+  else
+    {
+      respond (conn,
+               plain,
+               HTTP_406_NOT_ACCEPTABLE,
+               strlen (scidb_error),
+               scidb_error);
+    }
 }
 
 
@@ -907,9 +924,25 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
                                       &status);
           if (!s->scidb[i])
             {
-              respond_to_connection_error (conn, status);
+              if(status == SHIM_ERROR_AUTHENTICATION)
+                {
+                  syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_401);
+                  respond (conn,
+                           plain,
+                           HTTP_401_UNAUTHORIZED,
+                           strlen (MSG_ERR_HTTP_401),
+                           MSG_ERR_HTTP_401);
+                }
+              else
+                {
+                  syslog (LOG_ERR, "ERROR %s", MSG_ERR_HTTP_502);
+                  respond (conn,
+                           plain,
+                           HTTP_502_BAD_GATEWAY,
+                           strlen (MSG_ERR_HTTP_502),
+                           MSG_ERR_HTTP_502);
+                }
               cleanup_session (s);
-              omp_unset_lock (&s->lock);
               return;
             }
         }
@@ -1664,11 +1697,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                        SESSIONID_SHOW_LEN,
                        s->sessionid,
                        SERR);
-               respond (conn,
-                        plain,
-                        HTTP_406_NOT_ACCEPTABLE,
-                        strlen (SERR),
-                        SERR);
+               respond_to_query_error(conn, s, SERR);
                omp_unset_lock (&s->lock);
                return;
              }
@@ -1690,11 +1719,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                        SESSIONID_SHOW_LEN,
                        s->sessionid,
                        SERR);
-               respond (conn,
-                        plain,
-                        HTTP_406_NOT_ACCEPTABLE,
-                        strlen (SERR),
-                        SERR);
+               respond_to_query_error(conn, s, SERR);
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1718,7 +1743,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               SESSIONID_SHOW_LEN,
               s->sessionid,
               SERR);
-      respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
+      respond_to_query_error(conn, s, SERR);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1753,7 +1778,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               s->sessionid,
               SERR);
       if (!stream)
-        respond (conn, plain, HTTP_406_NOT_ACCEPTABLE, strlen (SERR), SERR);
+        respond_to_query_error(conn, s, SERR);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1902,15 +1927,16 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
         {
         case 'h':
           printf
-            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>]\n");
+            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>] [-a]\n");
           printf
-            ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB host is localhost.\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\n");
+            ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB host is localhost.\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\nBy default the aio_toos plugin is not used.\n");
           printf
             ("Start up shim and view http://localhost:8080/api.html from a browser for help with the API.\n\n");
           exit (0);
           break;
         case 'v':
-          printf ("%s\n", VERSION);
+          printf ("SciDB Version: %s\n", VERSION);
+          printf ("Shim Commit: %s\n", COMMIT);
           exit (0);
           break;
         case 'f':

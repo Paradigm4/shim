@@ -2,7 +2,7 @@
 **
 * BEGIN_COPYRIGHT
 *
-* Copyright (C) 2008-2016 Paradigm4, Inc.
+* Copyright (C) 2008-2018 Paradigm4, Inc.
 *
 * shim is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
