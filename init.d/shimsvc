@@ -46,6 +46,7 @@ if test -f "/var/lib/shim/conf"; then
 # Build up shim command line options
   test -n "${PORTS}" && PORTS="-p ${PORTS}"
   test -n "${TMPD}" && TMPD="-t ${TMPD}"
+  test -n "${SCIDBHOST}" && SCIDBHOST="-n ${SCIDBHOST}"
   test -n "${SCIDBPORT}" && SCIDBPORT="-s ${SCIDBPORT}"
   test -n "${MAX_SESSIONS}" && MAX_SESSIONS="-m ${MAX_SESSIONS}"
   test -n "${TIMEOUT}" && TIMEOUT="-o ${TIMEOUT}"

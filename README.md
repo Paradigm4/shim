@@ -3,22 +3,24 @@ through a simple HTTP API. It's based on the mongoose web server.  It's a shim
 between the low-level SciDB C API and a higher-level and lightweight web
 service API.
 
-#API Documentation 
+## API Documentation 
+
 See the [Documentation Pages](http://htmlpreview.github.io/?https://raw.github.com/Paradigm4/shim/master/wwwroot/help.html) for detailed nodes on release differences, configuration, authentication, encryption, limits and so on.
 
 The shim program tracks SciDB releases because it uses the SciDB client API.
 You need to use a version of shim that matches your SciDB release. You can checkout any previously released versions by git tag.
 
-#Installation from binary packages
+## Installation from binary packages
 
 This is the fastest/easiest way to install shim as a system service. We provide some pre-built binary packages.
 
-*SciDB on Ubuntu 14.04*:
+**SciDB on Ubuntu 14.04**
+
 *  [Shim for SciDB 16.9](https://github.com/Paradigm4/shim/raw/gh-pages/shim_16.9_amd64.deb)
 *  [Shim for SciDB 15.12](https://github.com/Paradigm4/shim/raw/gh-pages/shim_15.12_amd64.deb)
 *  [Shim for SciDB 15.7](http://paradigm4.github.io/shim/ubuntu_14.04_shim_15.7_amd64.deb)
 
-```
+```sh
 # Install with:
 gdebi shim_16.9_amd64.deb
 
@@ -26,14 +28,15 @@ gdebi shim_16.9_amd64.deb
 apt-get remove shim
 ```
 
-*SciDB on RHEL/Centos 6*
+**SciDB on RHEL/Centos 6**
+
 * [Shim for SciDB 16.9](http://paradigm4.github.io/shim/shim-16.9-1.x86_64.rpm)
 * [Shim for SciDB 15.12](http://paradigm4.github.io/shim/shim-15.12-1.x86_64.rpm)
 * [Shim for SciDB 15.7](http://paradigm4.github.io/shim/shim-15.7-1.x86_64.rpm)
 
 Packages for some older versions can be found at https://github.com/paradigm4/shim/tree/gh-pages
 
-```
+```sh
 # shim depends on a few libraries. If installation fails you may need to:
 yum install libgomp openssl-devel
 # Install with:
@@ -45,7 +48,7 @@ yum remove shim
 
 ## LD_LIBRARY_PATH issues
 
-By default shim installs into /opt/scidb/16.9/bin and expects the sibling directory "lib" to contain the "libscidbclient.so" library. This may present a problem if SciDB is installed in a different location. One way to go around the issue is by creating a symlink. For example:
+By default shim installs into `/opt/scidb/16.9/bin` and expects the sibling directory `lib` to contain the `libscidbclient.so` library. This may present a problem if SciDB is installed in a different location. One way to go around the issue is by creating a symlink. For example:
 ```bash
 ## Problem:
 $ sudo service shimsvc start
@@ -59,7 +62,8 @@ Starting shim
 ```
 You could also edit /etc/init.d/shimsvc or use other environment/path tricks.
 
-# Configuring  shim
+## Configuring  shim
+
 The `shim` service script consults the `/var/lib/shim/conf` file for
 configuration options. The default configuration options are shown below,
 and optional aut-configured values are indicated. Those values are set if
@@ -67,6 +71,7 @@ you install `shim` from a binary rpm or deb package.
 ```
 auth=login
 ports=8080,8083s
+scidbhost=localhost
 scidbport=1239 (or auto-configured by apt/yum to a local SciDB port)
 user=root
 tmp=/tmp  (or auto-configured by apt/yum to local SciDB storage directory)
@@ -82,7 +87,8 @@ The options are:
 * `auth` A PAM authentication method (limited to 'login' for now).
 * `ports` A comma-delimited list of HTTP listening ports. Append the lowercase
 letter 's' to indicate SSL encryption.
-* `scidbport` The local port to talk to SciDB on.
+* `scidbhost` The host on which SciDB runs.
+* `scidbport` The port to talk to SciDB on.
 * `user` The user that the shim service runs under. Shim can run as a non-root
 user, but then SSL authenticated port logins are limited to the user that shim
 is running under.
@@ -111,7 +117,7 @@ of options. When you run shim from a non-standard location, the program
 expects to find the ssl_cert.pem file one directory above the wwwroot
 directory.
 
-# Usage
+## Usage
 ```
 shim [-h] [-f] [-p <http port>] [-r <document root>] [-s <scidb port>]
 ```
@@ -132,7 +138,7 @@ sudo make SCIDB=/opt/scidb/16.9 uninstall
 ## Log files
 Shim prints messages to the system log. The syslog file location varies, but can usually be found in /var/log/syslog or /var/log/messages.
 
-# Manual Building
+## Manual Building
 Note that because shim is a SciDB client it needs the boost, zlib, log4cpp and log4cxx development libraries installed to compile. And because shim now uses PAM authentication, you'll now need the PAM development libraries for your system installed too. You also optionally need an SSL development library if you want to support TLS. 
 
 A good way to satisfy most of the dependencies is to install the SciDB Development Packages as described in the [dev_tools documentation](https://github.com/paradigm4/dev_tools#required-packages-scidb-169).

@@ -1,14 +1,13 @@
 ---
 title: "shim: A Simple HTTP Service for SciDB"
 author: "<div style='font-size: 0.7em'>B. W. Lewis <blewis@paradigm4.com></div>"
-date: "<div style='font-size: 0.7em'>11/9/2015</div>"
+date: "<div style='font-size: 0.7em'>2/1/2018</div>"
 output:
   html_document:
     toc: true
-    theme: cerulean
     css: shimstyle.css
+    self_contained: false
 ---
-
 # What's new (for SciDB 15.12)
 
 ## Support for the SciDB advanced I/O toolbox (_aio_tools_)
@@ -65,6 +64,7 @@ Available options include:
 
 ```
 #ports=8080,8083s
+#scidbhost=localhost
 scidbport=1239
 instance=0
 tmp=/home/scidb/scidbdata/000/0/tmp
@@ -103,14 +103,22 @@ Here are some examples of possible port configurations:
 <tr><td>127.0.0.1:8080,1234s <td> <td>List on port 8080 but only on the local loopback interface; listen on port 1234(TLS/SSL) on all interfaces.
 </table>
 
-## SciDB Port
+## SciDB Connection
 
-Shim runs on the same computer as a SciDB coordinator. Set the 'scidbport'
-option to select the coordinator database port to locally connect to. The
-default SciDB database port value is 1239 (see the SciDB configuration manual
-for more information). Since any SciDB instance can act as a query coordinator,
-it is possible to configure multiple shim services, for example one shim
-service per computer IP address.
+In most of the cases, Shim runs on the same computer as a SciDB
+coordinator. Set the 'scidbport' option to select the coordinator
+database port to locally connect to. The default SciDB database port
+value is 1239 (see the SciDB configuration manual for more
+information). Since any SciDB instance can act as a query coordinator,
+it is possible to configure multiple shim services, for example one
+shim service per computer IP address.
+
+In special cases, Shim can run on a different computer that the SciDB
+coordinator. For these cases, set the `scidbhost` option to the
+hostname or IP of the computer on which the SciDB coordinator
+runs. Still, a temporary I/O space shared between the computer running
+Shim and the computer running the SciDB coordinator is needed (see
+Temporary I/O Space section below).
 
 ## Instance
 
@@ -119,7 +127,7 @@ this option is set together with the corresponding SciDB port number for the
 instance, and also set a corresponding temporary I/O location that the instance
 has read/write access to.
 
-## Temporary I/O space
+## Temporary I/O Space
 
 Shim's default behavior caches the output of SciDB queries in files on the
 SciDB server; set that file directory location with the config file tmp option
@@ -208,21 +216,20 @@ Use plain text passwords in the file, and consider changing the permissions of
 the file to restrict access.  Delete the .htpasswd file to disable basic digest
 access authentication.
 
-Basic digest authentication works on plain or TLS-encrypted connections but can
-not be used in combination with SciDB authentication (see below).
+Basic digest authentication works on plain or TLS-encrypted connections.
 
 
 ## TLS/SSL encryption
 
 Shim optionally exposes both open and encrypted (HTTPS/TLS) services. You can
 provide a signed certificate in the `/var/lib/shim` directory. A generic
-random unsigned certific is automatically generated for you if you install
+random unsigned certificate is automatically generated for you if you install
 shim using either the .deb or .rpm package installer.
 
 
 ## SciDB authentication
 
-See the `/execute_query` service documentation below.
+If SciDB authentication is enabled, valid `user` and `password` credentials need to be provided as parameters to the `/new_session` request. A SciDB connection is created using the provided credentials. This connection is used for any subsequent `/execute_query` calls, until the session is released using `/release_session` or an HTTP 5xx error (critical error) occurs. The connection and the session remain valid after HTTP 4xx errors (e.g., syntax errors).
 
 
 ## Generic API Workflow
@@ -246,7 +253,8 @@ https://github.com/Paradigm4/shim/tree/master/tests for additional examples.
 <tr><td>DESCRIPTION  <td>Print the shim code version string
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS
-<tr><td>RESPONSE <td>**Success** HTTP 200 and text version string value in text/plain payload 
+<tr><td>RESPONSE <td>
+- Success: HTTP 200 and text version string value in text/plain payload 
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, engine='bash', comment=NA}
@@ -265,19 +273,28 @@ httr::GET("http://localhost:8080/version")
 <tr><td>DESCRIPTION  <td>Request a new HTTP session from the service.
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
+- **user** _optional_ SciDB authentication user name
+- **password** _optional_ SciDB authentication password
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and text session ID value in text/plain payload 
-- Failure (out of resources/server unavailable): HTTP 503 
-- Invalid request: HTTP 400 
+- Failure (authentication failure): HTTP 401
+- Failure (SciDB connection failed): HTTP 502
+- Failure (out of resources or server unavailable): HTTP 503
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, engine='bash', comment=NA}
 curl -s http://localhost:8080/new_session 
 ```
+```{r, engine='bash', comment=NA}
+curl -s http://localhost:8080/new_session?user=foo&password=bar 
+```
 <tr><td>EXAMPLE (R)
 <td>
 ```{r, comment=NA}
 id = httr::GET("http://localhost:8080/new_session")
+(id = rawToChar(id$content))
+
+id = httr::GET("http://localhost:8080/new_session?user=foo&password=bar")
 (id = rawToChar(id$content))
 ```
 </table>
@@ -290,8 +307,8 @@ id = httr::GET("http://localhost:8080/new_session")
 - **id** an HTTP session ID obtained from `/new_session`
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 
-- Failure (Session not found): HTTP 404 
-- Failure (invalid http query): HTTP 400 
+- Failure (missing HTTP arguments): HTTP 400
+- Failure (session not found): HTTP 404 
 <tr><td>EXAMPLE (R)
 <td>
 ```{r, comment=NA}
@@ -314,28 +331,23 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **user** _optional_ SciDB authentication user name (TLS connections only)
-- **password** _optional_ SciDB authentication password (TLS connections only)
 - **query** AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters
 - **save** optional SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by `read_lines` or `read_bytes`. If the save parameter is not specified, don't save the query output. 
 - **release** optional 0 or 1: if 1 then release_session as soon as query completes. The default value is 0 if not specified (see additional notes below).
 - **prefix** _optional_ semi-colon separated URL encoded AFL statements to precede **query** in the same SciDB connection context. Mainly used for SciDB namespace and role setting.
 <tr><td>RESPONSE <td>
-- Success: HTTP 200 text/plain (SciDB Query ID)
-- Failure (SciDB not available error): HTTP 503 text/plain (ERROR TEXT) 
-- Failure (SciDB query error): HTTP 500 text/plain (SCIDB ERROR TEXT) 
-- Failure (out of memory error): HTTP 507 text/plain (SCIDB ERROR TEXT) 
-- Failure (Invalid session): HTTP 404 
-- Failure (invalid http query): HTTP 400 
-- Not authorized (encrypted only): HTTP 401 
+- Success: HTTP 200 and SciDB query ID in text/plain payload
+- Failure (missing HTTP arguments): HTTP 400
+- Failure (session not found): HTTP 404 
+- Failure (SciDB query error): HTTP 406 and SciDB error text in text/plain payload
+- Failure (Shim internal error): HTTP 500 (out of memory)
+- Failure (SciDB connection failed): HTTP 502
 <tr><td>NOTES <td>
 Shim only supports AFL queries. 
 <p>
-Remember to URL-encode the SciDB query string.
+Remember to URL-encode the SciDB query string and special characters like the plus sign (+) in the request.
 <p>
-Specify optional user and password information for SciDB authentication. Authentication requires a TLS encrypted connection.
-<p>
-500 and 503 errors result in removal of the web session ID and related resources (thus, `release_session` does not have to be called after such an error). 
+An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <p>
 This method blocks until the query completes.
 <p>
@@ -372,10 +384,11 @@ httr::GET(query)
 ```
 <tr><td>EXAMPLE using prefix to set namespace (curl)
 <td>
-See the `tests/scidb_auth_example.sh` file for a full example.
+See the `examples/scidb_auth.sh` file for a full example.
 ```{r, comment=NA, engine='bash', eval=FALSE}
+# not ran
 id=$(curl -s -k "https://${host}:${port}/new_session")
-curl -f -s -k "https://${host}:${port}/execute_query?id=${id}&prefix=set_namespace('cazart')&query=list()&user=${USER}&password=${PASSWORD}&save=dcsv"
+curl -f -s -k "https://${host}:${port}/execute_query?id=${id}&prefix=set_namespace('cazart')&query=list()&save=dcsv"
 curl -f -s -k "https://${host}:${port}/read_lines?id=${id}&n=0"
 curl -f -s -k "https://${host}:${port}/release_session?id=${id}"
 ```
@@ -388,22 +401,17 @@ curl -f -s -k "https://${host}:${port}/release_session?id=${id}"
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **user** _optional_ SciDB authentication user name (TLS connections only)
-- **password** _optional_ SciDB authentication password (TLS connections only)
-<tr><td>NOTES <td>
-<p>
-Specify optional user and password information for SciDB authentication. Authentication requires a TLS encrypted connection.
 <tr><td>RESPONSE <td>
-- Success: HTTP 200 
+- Success: HTTP 200
+- Failure (missing HTTP arguments): HTTP 400
 - Failure (session not found): HTTP 404 
-- Failure (invalid http query): HTTP 400 
-- Not authorized (encrypted only): HTTP 401 
-- Failure (could not connect to SciDB): HTTP 503 
+- Failure (session has no query): HTTP 409 
+- Failure (could not connect to SciDB): HTTP 502
 <tr><td>EXAMPLE (R)
 <td>
 ```{r, comment=NA, eval=FALSE}
-# An example cancellation of a query associated with shim ID 19 (not run)
-httr::GET("http://localhost:8080/cancel?id=19")
+# An example cancellation of a query associated with shim ID 19 (not ran)
+httr::GET("http://localhost:8080/cancel?id=9v3g5l65mbnks3kh3bi0gb4lobe12fdb")
 ```
 </table>
 
@@ -414,30 +422,37 @@ httr::GET("http://localhost:8080/cancel?id=19")
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
 - **id** an HTTP session ID obtained from `/new_session`
-- **n**  the maximum number of lines to read and return between 0 and 2147483647.
+- **n**  the maximum number of lines to read and return between 0 and 2147483647. Default is 0.
 <tr><td>RESPONSE <td>
-- Success: HTTP 200 followed by application/octet-stream query result (up to n lines) 
-- Failure (invalid HTTP query string): HTTP 400 
+- Success: HTTP 200 and application/octet-stream query result (up to n lines) 
+- Failure (missing HTTP arguments): HTTP 400
 - Failure (session not found): HTTP 404 
-- Failure (end of file): HTTP 410 
-- Failure (invalid request): HTTP 414 
-- Failure (SciDB server error): HTTP 500
-- Failure (could not connect to SciDB server error): HTTP 503
-- Failure (server out of memory): HTTP 507
+- Failure (output not saved): HTTP 410 
+- Failure (range out of bounds): HTTP 416 
+- Failure (output not saved in text format): HTTP 416 
+- Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer)
 <tr><td>NOTES <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n>0, iterative requests to `read_lines` are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don't use this option if you can avoid it.
 <p>
-Note that query results are _always_ returned as application/octet-stream.
+Note that query results are _always_ returned as application/octet-stream. `/read_lines` can only be used if the result was saved in text format.
+<p>
+An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, comment=NA, engine='bash'}
+# Obtain a new shim session ID
 s=`curl -s "http://localhost:8080/new_session"`
+
+# The URL-encoded SciDB query in the next line is just:
+# list('functions')
 curl -s "http://localhost:8080/execute_query?id=${s}&query=list('functions')&save=dcsv"
+echo
+
 curl -s "http://localhost:8080/read_lines?id=${s}&n=10"
+
+# Release the session
 curl -s "http://localhost:8080/release_session?id=${s}"
 ```
 </table>
@@ -451,22 +466,21 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 - **id** an HTTP session ID obtained from `/new_session`
 - **n**  the maximum number of bytes to read and return between 0 and 2147483647.
 <tr><td>RESPONSE <td>
-- Success: HTTP 200 followed by application/octet-stream query result (up to n lines) 
-- Failure (invalid HTTP query string): HTTP 400 
+- Success: HTTP 200 and application/octet-stream query result (up to n lines) 
+- Failure (missing HTTP arguments): HTTP 400
 - Failure (session not found): HTTP 404 
-- Failure (end of file): HTTP 410 
-- Failure (invalid request): HTTP 414 
-- Failure (SciDB server error): HTTP 500
-- Failure (could not connect to SciDB server error): HTTP 503
-- Failure (server out of memory): HTTP 507
+- Failure (output not saved): HTTP 410 
+- Failure (range out of bounds): HTTP 416 
+- Failure (output not saved in binary format): HTTP 416 
+- Failure (Shim internal error): HTTP 500 (out of memory, failed to open output buffer, get file status failed)
 <tr><td>NOTES <td>
 Set n=0 to download the entire output buffer. You should almost always set n=0.
 <p>
-Be sure to properly url-encode special characters like the plus sign (+) in the request.
-<p>
 When n>0, iterative requests to `read_bytes` are allowed, and will return at most the next n lines of output. Use the 410 error code to detect end of file output. Don't use this option if you can avoid it.
 <p>
-Note that query results are _always_ returned as application/octet-stream.
+Note that query results are _always_ returned as application/octet-stream. `/read_bytes` can only be used if the result was saved in binary format.
+<p>
+An HTTP 500 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <tr><td>EXAMPLE (curl)
 <td>
 ```{r, comment=NA, engine='bash'}
@@ -476,38 +490,13 @@ s=`curl -s "http://localhost:8080/new_session"`
 # The URL-encoded SciDB query in the next line is just:
 # build(<x:double>[i=1:10,10,0],u)
 curl -s "http://localhost:8080/execute_query?id=${s}&query=build(%3Cx:double%3E%5Bi=1:10,10,0%5D,i)&save=(double)"
+echo
 
 # Pass the double-precision binary result through the `od` program to view:
 curl -s "http://localhost:8080/read_bytes?id=${s}" | od -t f8
 
 # Release the session
 curl -s "http://localhost:8080/release_session?id=${s}"
-```
-</table>
-
-
-### **/upload_file**
-<table>
-<tr><td>DESCRIPTION  <td>Upload a file to the HTTP service using a multipart/file POST method.
-<tr><td>METHOD <td>POST
-<tr><td>PARAMETERS <td>
-- **id** an HTTP session ID obtained from `/new_session`
-- A valid multipart/file POST body -- see the example below
-<tr><td>RESPONSE <td>
-- Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response. 
-- Failure (invalid HTTP query string): HTTP 400 
-- Failure (Session not found): HTTP 404 
-- Failure (Server error): HTTP 500 
-<tr><td>NOTES <td>Try to avoid using this method. It's fairly slow to transfer data and difficult to get the POST
-body message right. Instead use the faster and simpler `/upload` method shown below.
-<tr><td>EXAMPLE (curl)
-<td>
-```{r, engine='bash'}
-# Upload 5 MB of random bytes
-id=$(curl -s  "http://localhost:8080/new_session")
-dd if=/dev/urandom bs=1M count=5  | \
-  curl -s --form "fileupload=@-;filename=data" "http://localhost:8080/upload_file?id=${id}"
-curl -s "http://localhost:8080/release_session?id=${id}"
 ```
 </table>
 
@@ -520,10 +509,9 @@ curl -s "http://localhost:8080/release_session?id=${id}"
 - **id** an HTTP session ID obtained from `/new_session`
 - A valid POST body -- see the example below
 <tr><td>RESPONSE <td>
-- Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response. 
-- Failure (invalid HTTP query string): HTTP 400 
-- Failure (Session not found): HTTP 404 
-- Failure (Server error): HTTP 500 
+- Success: HTTP 200 and the name of the file uploaded to the server in a text/plain response 
+- Failure (missing HTTP arguments, empty file): HTTP 400
+- Failure (session not found): HTTP 404 
 <tr><td>NOTES <td>Use the returned server-side file name in later calls, for example to `execute_query`.
 <p>
 This method is faster and easier to use than the older `/upload_file` method.
@@ -553,7 +541,6 @@ httr::GET(sprintf("http://localhost:8080/release_session?id=%s", session))
 </table>
 
 
-
 # Orphaned Sessions
 
 Shim limits the number of simultaneous open sessions. Absent-minded or
@@ -571,4 +558,4 @@ The above scheme is called lazy as sessions are only harvested when a new sessio
 Shim does not protect against uploading gigantic files nor from running many long-running SciDB queries. The service may become unavailable if too many query and/or upload operations are in flight; an HTTP 503 (Service Unavailable) error code is returned in that case.
 
 
-Copyright (C) 2016, Paradigm4.
+Copyright (C) 2016-2018, Paradigm4.

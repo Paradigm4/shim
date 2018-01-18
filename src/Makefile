@@ -1,4 +1,4 @@
-ifeq ($(SCIDB),) 
+ifeq ($(SCIDB),)
   X := $(shell which scidb 2>/dev/null)
   ifneq ($(X),)
     X := $(shell dirname ${X})
@@ -6,6 +6,7 @@ ifeq ($(SCIDB),)
   endif
 endif
 VERSION := $(shell scidb --version | head -n 1 | cut -d ':' -f 2 |tr -d ' ')
+COMMIT := $(shell git rev-list --abbrev-commit -1 HEAD)
 
 # A way to set the 3rdparty prefix path that is convenient
 # for SciDB developers.
@@ -22,7 +23,7 @@ ifeq ($(SCIDB_THIRDPARTY_PREFIX),)
   SCIDB_THIRDPARTY_PREFIX := $(SCIDB_3RDPARTY)
 endif
 
-CFLAGS=-std=gnu99 -fopenmp -g -pedantic -DVERSION=\"$(VERSION)\"
+CFLAGS=-std=gnu99 -fopenmp -g -pedantic -DVERSION=\"$(VERSION)\" -DCOMMIT=\"$(COMMIT)\"
 INC=-I. -DPROJECT_ROOT="\"$(SCIDB)\"" -I"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boost/include/" -I"$(SCIDB)/include" -I"$(SCIDB)/3rdparty/boost/include/boost/container" -DSCIDB_CLIENT
 LIBS=-lstdc++ -ldl -lz -pthread -L"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boost/lib" -L"$(SCIDB)/lib" -lscidbclient -lboost_system -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN:$$ORIGIN/../lib:$$ORIGIN/../../:$(SCIDB)/3rdparty/boost/lib:'
 
@@ -76,7 +77,7 @@ help:
 	@echo "Other tests are available. Read the contents of Makefile for details."
 
 install: shim
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	@if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop;fi
 	mkdir -p "$(DESTDIR)$(SCIDB)/bin"
 	cp shim "$(DESTDIR)/$(SCIDB)/bin"
@@ -86,7 +87,7 @@ install: shim
 	@if test -d $(DESTDIR)/usr/local/share/man/man1;then cp man/shim.1 $(DESTDIR)/usr/local/share/man/man1/;fi
 
 uninstall: unservice
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example:\n\nmake SCIDB=/opt/scidb/13.3 uninstall"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example:\n\nmake SCIDB=/opt/scidb/13.3 uninstall"; exit 1; fi
 	- @if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop;fi
 	rm -f "$(SCIDB)/bin/shim"
 	rm -rf /var/lib/shim
@@ -107,7 +108,7 @@ unservice:
 
 deb-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
 	mkdir -p pkgroot/etc/init.d
@@ -121,7 +122,7 @@ deb-pkg: shim
 
 rpm-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi 
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
 	mkdir -p pkgroot/etc/init.d
@@ -135,56 +136,3 @@ rpm-pkg: shim
 
 clean:
 	rm -fr *.o *.so shim pkgroot *.rpm *.deb test
-
-
-test1: shim
-	@echo "Non-authenticated test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/noauth.sh
-
-test2: shim
-	@echo "Basic digest authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/digest_auth.sh
-
-test3: shim
-	@echo "TLS without authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls.sh
-
-test4: shim
-	@echo "TLS with digest authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls_digest.sh
-
-test5: shim
-	@echo "Streaming"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/stream.sh
-
-test6: shim
-	@echo "Streaming with compression"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/compressed_stream.sh
-
-test7: shim
-	@echo "multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
-
-test8: shim
-	@echo "repeated multiuser streaming test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
-
-test9: shim
-	@echo "readbytes test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/readbytes.sh
-
-test10: shim
-	@echo "upload test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload.sh
-
-test11: shim0
-	@echo "valgrind test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
-	@echo "Now carefully inspect the report in /tmp/valgrind.out"
-
-grinder: shim0
-	@echo "multiuser valgrind test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/grinder.sh
-	@echo "Now carefully inspect the report in /tmp/grinder.out"
-
-test: test1 test2 test3 test4 test5 test6 test9 test10
