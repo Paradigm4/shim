@@ -33,6 +33,7 @@ install:
     --no-install-recommends
     busybox-syslogd
     curl
+    libssl-dev
   - docker exec scidb ln --symbolic
     /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim install
