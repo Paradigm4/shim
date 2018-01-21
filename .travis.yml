@@ -31,7 +31,6 @@ install:
   - docker exec scidb apt-get install
     --assume-yes
     --no-install-recommends
-    bc
     busybox-syslogd
     curl
   - docker exec scidb ln --symbolic
