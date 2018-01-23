@@ -13,10 +13,10 @@ CURL="curl --digest --user $HTTP_AUTH --write-out %{http_code} --silent"
 NO_OUT="--output /dev/null"
 SHIM_URL="http://$HOST:$PORT"
 SCIDB_AUTH="user=root&password=Paradigm4"
-ERR1=200
-ERR2=401
-ERR3=406
-ERR4=500
+ERR1=502
+ERR2=$ERR1
+ERR3=500
+ERR4=$ERR3
 
 set -o errexit
 

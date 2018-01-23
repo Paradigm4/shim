@@ -53,6 +53,7 @@ extern "C" void * scidbconnect(const char *host, int port, const char* username,
       if(username == NULL || password == NULL)
       {
           scidb::SessionProperties props;
+          props.setCredCallback(NULL, NULL); // SDB-6038
           conn = db.connect(props, host, port);
       }
       else
