@@ -64,7 +64,7 @@ extern "C" void * scidbconnect(const char *host, int port, const char* username,
       }
       *status = SHIM_CONNECTION_SUCCESSFUL;
   }
-  catch(const scidb::SystemException& se)
+  catch(const scidb::Exception& se)
   {
       if(se.getLongErrorCode() == scidb::SCIDB_LE_AUTHENTICATION_ERROR)
       {
