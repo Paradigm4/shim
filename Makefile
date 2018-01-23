@@ -9,6 +9,7 @@ endif
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 
+.PHONY: shim
 shim:
 	$(MAKE) -C src shim
 	@cp src/shim .

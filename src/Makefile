@@ -28,19 +28,19 @@ endif
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 
-shim: client sha512 base64 client.h
+shim: client.o sha512.o base64.o client.h
 	$(CC) -Wall $(CFLAGS) -DUSE_WEBSOCKET $(INC) $(LDFLAGS) -fpic -g -o shim shim.c mongoose.c client.o sha512.o base64.o $(LIBS) -llog4cxx -lprotobuf
 
-shim0: client sha512 base64
+shim0: client.o sha512.o base64.o
 	$(CC) -Wall $(CFLAGS) -O0 -DUSE_WEBSOCKET $(INC) $(LDFLAGS) -fpic -g -o shim shim.c mongoose.c client.o sha512.o base64.o $(LIBS)
 
-client: client.h
+client.o: client.h client.cpp
 	$(CXX) $(CXXFLAGS) $(INC) -fpic -g -c client.cpp -o client.o
 
-sha512:
+sha512.o:
 	$(CC) -Wall $(CFLAGS) -fpic -g -c sha512.c -o sha512.o
 
-base64:
+base64.o:
 	$(CC) -Wall $(CFLAGS) -fpic -g -c base64.c -o base64.o
 
 help:
