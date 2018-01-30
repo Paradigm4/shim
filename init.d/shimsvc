@@ -35,15 +35,14 @@ USER=root
 AIO=
 # This parsing is pretty lame
 if test -f "/var/lib/shim/conf"; then
-  PORTS="$(cat /var/lib/shim/conf | sed -n /^ports/p | cut -d '=' -f 2)"
-  SCIDBHOST="$(cat /var/lib/shim/conf | sed -n /^scidbhost/p | cut -d '=' -f 2)"
-  SCIDBPORT="$(cat /var/lib/shim/conf | sed -n /^scidbport/p | cut -d '=' -f 2)"
-  USER="$(cat /var/lib/shim/conf | sed -n /^user/p | cut -d '=' -f 2)"
-  TMPD="$(cat /var/lib/shim/conf | sed -n /^tmp/p | cut -d '=' -f 2)"
-  MAX_SESSIONS="$(cat /var/lib/shim/conf | sed -n /^max/p | cut -d '=' -f 2)"
-  TIMEOUT="$(cat /var/lib/shim/conf | sed -n /^time/p | cut -d '=' -f 2)"
-  SAVE_INSTANCE_ID="$(cat /var/lib/shim/conf | sed -n /^instance/p | cut -d '=' -f 2)"
-  AIO="$(cat /var/lib/shim/conf | sed -n /^aio/p | cut -d '=' -f 2)"
+  PORTS="$(cat /var/lib/shim/conf | sed -n /^ports/p | cut -d '=' -f 2 | tr -d '\r')"
+  SCIDBPORT="$(cat /var/lib/shim/conf | sed -n /^scidbport/p | cut -d '=' -f 2 | tr -d '\r')"
+  USER="$(cat /var/lib/shim/conf | sed -n /^user/p | cut -d '=' -f 2 | tr -d '\r')"
+  TMPD="$(cat /var/lib/shim/conf | sed -n /^tmp/p | cut -d '=' -f 2 | tr -d '\r')"
+  MAX_SESSIONS="$(cat /var/lib/shim/conf | sed -n /^max/p | cut -d '=' -f 2 | tr -d '\r')"
+  TIMEOUT="$(cat /var/lib/shim/conf | sed -n /^time/p | cut -d '=' -f 2 | tr -d '\r')"
+  SAVE_INSTANCE_ID="$(cat /var/lib/shim/conf | sed -n /^instance/p | cut -d '=' -f 2 | tr -d '\r')"
+  AIO="$(cat /var/lib/shim/conf | sed -n /^aio/p | cut -d '=' -f 2 | tr -d '\r')"
 # Build up shim command line options
   test -n "${PORTS}" && PORTS="-p ${PORTS}"
   test -n "${TMPD}" && TMPD="-t ${TMPD}"

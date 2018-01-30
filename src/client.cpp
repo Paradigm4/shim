@@ -34,6 +34,7 @@ extern "C"
 }
 
 #include "SciDBAPI.h"
+#include "rbac/SessionProperties.h"
 
 using namespace std;
 using namespace scidb;
@@ -51,7 +52,9 @@ extern "C" void * scidbconnect(const char *host, int port, const char* username,
   {
       if(username == NULL || password == NULL)
       {
-          conn = db.connect(host, port);
+          scidb::SessionProperties props;
+          props.setCredCallback(NULL, NULL); // SDB-6038
+          conn = db.connect(props, host, port);
       }
       else
       {
@@ -61,7 +64,7 @@ extern "C" void * scidbconnect(const char *host, int port, const char* username,
       }
       *status = SHIM_CONNECTION_SUCCESSFUL;
   }
-  catch(const scidb::SystemException& se)
+  catch(const scidb::Exception& se)
   {
       if(se.getLongErrorCode() == scidb::SCIDB_LE_AUTHENTICATION_ERROR)
       {
