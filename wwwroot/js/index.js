@@ -70,12 +70,17 @@ $.ajaxSetup({
   });
 
 
+/*
+*** DISCONTINUED ***
 function do_login_maybe()
 {
   $("#scidb_dash")[0].innerHTML = "<h3>Login...</h3>";
   $('#loginModal').modal();
 }
+*/
 
+/*
+*** DISCONTINUED ***
 function do_login(sq, numlines)
 {
   if(sq=="") sq="list('instances')";
@@ -92,18 +97,13 @@ function do_login(sq, numlines)
           window.setTimeout('location.reload()', 1500);
     });
 }
+*/
 
 function hello_maybe(sq, numlines)
 {
   var cook = getCookie("authtok");
   var digest = getCookie("digest");
-  if(location.protocol == "https:" && (cook=="null" || cook==null) && (digest=="null" || digest==null))
-  {
-    do_login_maybe();
-  } else
-  {
-    hello(sq, numlines);
-  }
+  hello(sq, numlines);
 }
 
 function hello(sq, numlines)
