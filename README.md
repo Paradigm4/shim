@@ -3,7 +3,7 @@ through a simple HTTP API. It's based on the mongoose web server.  It's a shim
 between the low-level SciDB C API and a higher-level and lightweight web
 service API.
 
-## API Documentation 
+## API Documentation
 
 See the [Documentation Pages](http://htmlpreview.github.io/?https://raw.github.com/Paradigm4/shim/master/wwwroot/help.html) for detailed nodes on release differences, configuration, authentication, encryption, limits and so on.
 
@@ -56,7 +56,7 @@ Starting shim
 /opt/scidb/16.9/bin/shim: error while loading shared libraries: libscidbclient.so: cannot open shared object file: No such file or directory
 
 ## Solution: supposing SciDB was installed at ~/scidb
-$ sudo ln -s ~/scidb/lib /opt/scidb/16.9/lib 
+$ sudo ln -s ~/scidb/lib /opt/scidb/16.9/lib
 $ sudo service shimsvc start
 Starting shim
 ```
@@ -139,7 +139,7 @@ sudo make SCIDB=/opt/scidb/16.9 uninstall
 Shim prints messages to the system log. The syslog file location varies, but can usually be found in /var/log/syslog or /var/log/messages.
 
 ## Manual Building
-Note that because shim is a SciDB client it needs the boost, zlib, log4cpp and log4cxx development libraries installed to compile. And because shim now uses PAM authentication, you'll now need the PAM development libraries for your system installed too. You also optionally need an SSL development library if you want to support TLS. 
+Note that because shim is a SciDB client it needs the boost, zlib, log4cpp and log4cxx development libraries installed to compile. And because shim now uses PAM authentication, you'll now need the PAM development libraries for your system installed too. You also optionally need an SSL development library if you want to support TLS.
 
 A good way to satisfy most of the dependencies is to install the SciDB Development Packages as described in the [dev_tools documentation](https://github.com/paradigm4/dev_tools#required-packages-scidb-169).
 
@@ -170,4 +170,3 @@ make rpm-pkg
 ```
 respectively. Building packages requires that certain extra packaging programs are available,
 including rpmbuild for RHEL/CentOS and the Ruby-based fpm packaging utility on all systems.
-
