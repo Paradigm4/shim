@@ -75,7 +75,6 @@ scidbhost=localhost
 scidbport=1239 (or auto-configured by apt/yum to a local SciDB port)
 user=root
 tmp=/tmp  (or auto-configured by apt/yum to local SciDB storage directory)
-auth=login
 max_sessions=50
 timeout=60
 instance=0  (or auto-configured by apt/yum to a local SciDB instance ID)
