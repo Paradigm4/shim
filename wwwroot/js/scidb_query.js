@@ -183,7 +183,7 @@ function execute_query_list(ret, qu)
   $.get(
     "/new_session?auth="+getCookie("authtok"),
     function(data){
-      sessionid = parseInt(data); // session ID
+      sessionid = data; // session ID
       if(Array.isArray(upload))
       {
         do_upload(upload[0],ret,sessionid,sq,qu);
@@ -461,7 +461,7 @@ function show_query(sq)
 $.get(
   "/new_session?auth="+getCookie("authtok"),
   function(data){
-    x = parseInt(data); // session ID
+    x = data; // session ID
 // escape apostrophes
 // strip comments if any
     sq = sq.replace(/'/g,"\\'").replace(/--.*$/gm,"")

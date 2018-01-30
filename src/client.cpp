@@ -2,7 +2,7 @@
 **
 * BEGIN_COPYRIGHT
 *
-* Copyright (C) 2008-2016 Paradigm4, Inc.
+* Copyright (C) 2008-2018 Paradigm4, Inc.
 *
 * shim is free software: you can redistribute it and/or modify it under the
 * terms of the GNU General Public License as published by the Free Software
@@ -138,7 +138,7 @@ prepare_query(void *result, void *con, char *query, int afl, char *err)
   scidb::SciDB& db = scidb::getSciDB();
   const string &queryString = (const char *)query;
   scidb::QueryResult *q = new scidb::QueryResult();
-  if(!q) 
+  if(!q)
   {
     snprintf(err,MAX_VARLEN,"Unable to allocate query result\n");
     return;

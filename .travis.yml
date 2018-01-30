@@ -1,6 +1,11 @@
 sudo: required
+dist: trusty
+group: deprecated-2017Q4
 
-language: generic
+language: python
+
+python:
+  - "3.6"
 
 env: SCIDB_VER=16.9
 
@@ -8,16 +13,16 @@ services:
   - docker
 
 before_install:
-  - docker pull rvernica/scidb:${SCIDB_VER}
+  - docker pull rvernica/scidb:${SCIDB_VER}-ext
   - pwd
   - docker run
     --name scidb
     --detach
     --volume /dev/shm
     --tmpfs /dev/shm
-    --volume /home/travis/build/Paradigm4/shim:/shim
+    --volume `pwd`:/shim
     --publish 8080:8080
-    rvernica/scidb:${SCIDB_VER}
+    rvernica/scidb:${SCIDB_VER}-ext
   - while ! curl http://localhost:8080/version; do sleep 1; done
   - docker exec scidb service shimsvc stop
 
@@ -26,16 +31,19 @@ install:
   - docker exec scidb apt-get install
     --assume-yes
     --no-install-recommends
-    bc
     busybox-syslogd
     curl
   - docker exec scidb ln --symbolic
-    /opt/scidb/16.9/lib/libscidbclient.so /lib/
-  - docker exec scidb make --directory /shim
+    /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
+  - docker exec scidb make --directory /shim install
   - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
+  - pip install --upgrade -r tests/pytest/requirements.txt
 
 script:
-  - docker exec scidb /shim/tests/run-all.sh
+  - docker exec scidb make --directory /shim test
+  - docker exec scidb /shim/shim
+  - pytest tests/pytest/test_sessions.py
+  - pytest -n 10 tests/pytest/test_sessions_multi.py
 
 after_failure:
   - docker logs scidb

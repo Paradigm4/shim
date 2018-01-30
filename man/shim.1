@@ -27,6 +27,9 @@ Listen on the specified port. Shim defaults to ports 8080 and 8083(SSL).
 Set the HTTP document root to the specified path. Default installations
 of shim use /var/lib/shim/wwwroot by default.
 .TP
+.B \-n \fIhost\fR
+Talk to SciDB on the specified host, localhost by default.
+.TP
 .B \-s \fIport\fR
 Talk to SciDB on the specified port, 1239 by default.
 .TP
@@ -45,9 +48,12 @@ Set the maximum number of concurrent HTTP sessions, default of 50.
 .TP
 .B \-a
 Use the optional SciDB aio_tools plugin.
+.TP
+.B \-v
+Display version information.
 
 
 .SH AUTHOR
 Written by Bryan Wayne Lewis, Paradigm4 Inc.
 .SH COPYRIGHT
-Copyright (C) 2012 Paradigm4 Inc.
+Copyright (C) 2012-2018 Paradigm4 Inc.
