@@ -1117,6 +1117,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
                    HTTP_500_SERVER_ERROR,
                    strlen (MSG_ERR_HTTP_500_BUF),
                    MSG_ERR_HTTP_500_BUF);
+          cleanup_session (s);
           omp_unset_lock (&s->lock);
           return;
         }
@@ -1154,6 +1155,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_500_SERVER_ERROR,
                strlen (MSG_ERR_HTTP_500_FST),
                MSG_ERR_HTTP_500_FST);
+      cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1173,6 +1175,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_500_SERVER_ERROR,
                strlen (MSG_ERR_HTTP_500_OOM),
                MSG_ERR_HTTP_500_OOM);
+      cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1334,6 +1337,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                    HTTP_500_SERVER_ERROR,
                    strlen (MSG_ERR_HTTP_500_BUF),
                    MSG_ERR_HTTP_500_BUF);
+          cleanup_session (s);
           omp_unset_lock (&s->lock);
           return;
         }
@@ -1353,6 +1357,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                    HTTP_500_SERVER_ERROR,
                    strlen (MSG_ERR_HTTP_500_BUF),
                    MSG_ERR_HTTP_500_BUF);
+          cleanup_session (s);
           omp_unset_lock (&s->lock);
           return;
         }
@@ -1380,6 +1385,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_500_SERVER_ERROR,
                strlen (MSG_ERR_HTTP_500_OOM),
                MSG_ERR_HTTP_500_OOM);
+      cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1397,6 +1403,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                HTTP_500_SERVER_ERROR,
                strlen (MSG_ERR_HTTP_500_OOM),
                MSG_ERR_HTTP_500_OOM);
+      cleanup_session (s);
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1437,6 +1444,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
                        HTTP_500_SERVER_ERROR,
                        strlen (MSG_ERR_HTTP_500_OOM),
                        MSG_ERR_HTTP_500_OOM);
+              cleanup_session (s);
               omp_unset_lock (&s->lock);
               return;
             }
