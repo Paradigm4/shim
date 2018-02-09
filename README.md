@@ -5,7 +5,7 @@ service API.
 
 ## API Documentation
 
-See the [Documentation Pages](http://htmlpreview.github.io/?https://raw.github.com/Paradigm4/shim/master/wwwroot/help.html) for detailed nodes on release differences, configuration, authentication, encryption, limits and so on.
+See the [Help page](http://paradigm4.github.io/shim/help.html) for detailed nodes on release differences, configuration, authentication, encryption, limits and so on.
 
 The shim program tracks SciDB releases because it uses the SciDB client API.
 You need to use a version of shim that matches your SciDB release. You can checkout any previously released versions by git tag.
