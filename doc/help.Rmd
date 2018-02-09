@@ -8,28 +8,6 @@ output:
     css: shimstyle.css
     self_contained: false
 ---
-# What's new (for SciDB 15.12)
-
-## Support for the SciDB advanced I/O toolbox (_aio_tools_)
-
-Use the `-a` command line flag, or add the line
-```
-aio=1
-```
-to the `/var/lib/shim/conf` file to save data using the SciDB aio_tools plugin (required).
-
-## SciDB native authentication
-
-But only for the  `/execute_query` and `/cancel` services (the only services that really
-talk directly to SciDB). If you need to protect the other shim services, consider using
-digest authentication.
-
-## Streaming and compression options no longer supported
-
-The `execute_query` service no longer supports either option, if you use these
-options they will be ignored.
-
-
 # Overview
 
 Shim is a web service that exposes a very simple API for clients to interact

@@ -205,11 +205,6 @@ B. W. Lewis <a href="mailto:blewis@paradigm4.com">blewis@paradigm4.com</a>
 
 <div id="TOC">
 <ul>
-<li><a href="#whats-new-for-scidb-15.12">What’s new (for SciDB 15.12)</a><ul>
-<li><a href="#support-for-the-scidb-advanced-io-toolbox-aio_tools">Support for the SciDB advanced I/O toolbox (<em>aio_tools</em>)</a></li>
-<li><a href="#scidb-native-authentication">SciDB native authentication</a></li>
-<li><a href="#streaming-and-compression-options-no-longer-supported">Streaming and compression options no longer supported</a></li>
-</ul></li>
 <li><a href="#overview">Overview</a></li>
 <li><a href="#configuration">Configuration</a><ul>
 <li><a href="#ports-and-network-interfaces">Ports and Network Interfaces</a></li>
@@ -244,23 +239,6 @@ B. W. Lewis <a href="mailto:blewis@paradigm4.com">blewis@paradigm4.com</a>
 </ul>
 </div>
 
-<div id="whats-new-for-scidb-15.12" class="section level1">
-<h1>What’s new (for SciDB 15.12)</h1>
-<div id="support-for-the-scidb-advanced-io-toolbox-aio_tools" class="section level2">
-<h2>Support for the SciDB advanced I/O toolbox (<em>aio_tools</em>)</h2>
-<p>Use the <code>-a</code> command line flag, or add the line</p>
-<pre><code>aio=1</code></pre>
-<p>to the <code>/var/lib/shim/conf</code> file to save data using the SciDB aio_tools plugin (required).</p>
-</div>
-<div id="scidb-native-authentication" class="section level2">
-<h2>SciDB native authentication</h2>
-<p>But only for the <code>/execute_query</code> and <code>/cancel</code> services (the only services that really talk directly to SciDB). If you need to protect the other shim services, consider using digest authentication.</p>
-</div>
-<div id="streaming-and-compression-options-no-longer-supported" class="section level2">
-<h2>Streaming and compression options no longer supported</h2>
-<p>The <code>execute_query</code> service no longer supports either option, if you use these options they will be ignored.</p>
-</div>
-</div>
 <div id="overview" class="section level1">
 <h1>Overview</h1>
 <p>Shim is a web service that exposes a very simple API for clients to interact with SciDB over HTTP connections. The API consists of a small number of services (described in detail below), including: <code>/new_session</code>, <code>/release_session</code>, <code>/execute_query</code>, <code>/cancel</code>, <code>/read_lines</code>, <code>/read_bytes</code>, <code>/upload_file</code>, <code>/upload</code>, <code>/version</code>.</p>
@@ -416,7 +394,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2018-01-10 20:55
+  Date: 2018-02-08 19:37
   Status: 200
   Content-Type: text/plain
   Size: 6 B</code></pre>
@@ -456,19 +434,19 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>ju8xwuchtajdft54i9847kx94cql0k8j</code></pre>
+<pre><code>z3rkhq4r753evgd2qtr3zv87537dw3ub</code></pre>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
-<pre><code>ewgqq97jzqcfkhzi7nne7k3rctdct1b7</code></pre>
+<pre><code>n1vkrfrykuswa6egf6ze17m6a90mduxg</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;xsynhlngczbcxaukxxekhic9r5ll6x83&quot;</code></pre>
+<pre><code>[1] &quot;v802orh8l9kbvz7a5m5mur9k097tj49u&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;566mst2k9ewm466i4ki1iabafcb1pjka&quot;</code></pre>
+<pre><code>[1] &quot;t9whgt5hj6se5f5q2acc11chajr9403x&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -504,10 +482,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;67we0fep9qbtwxrgyaygk96g1hx7hih3&quot;</code></pre>
+<pre><code>[1] &quot;qgum9f4slwnqsswaip2zqeghy7qiouvu&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=67we0fep9qbtwxrgyaygk96g1hx7hih3]
-  Date: 2018-01-10 20:55
+<pre><code>Response [http://localhost:8080/release_session?id=qgum9f4slwnqsswaip2zqeghy7qiouvu]
+  Date: 2018-02-08 19:37
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -581,14 +559,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1515646548397324502&quot;</code></pre>
+<pre><code>[1] &quot;1518147433112287396&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1515646548457817863</code></pre>
+<pre><code>1518147433191265472</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -598,8 +576,8 @@ session = rawToChar(id$content)
 query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=7fbidslq9y2ah2x2yd6lz62xzhizk328&amp;query=consume(42)&amp;release=1]
-  Date: 2018-01-10 20:55
+<pre><code>Response [http://localhost:8080/execute_query?id=y35q90xlvq8n157iww3nfulg1gg8p4f3&amp;query=consume(42)&amp;release=1]
+  Date: 2018-02-08 19:37
   Status: 406
   Content-Type: text/html
   Size: 279 B
@@ -719,7 +697,7 @@ curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1515646548556496592
+<pre><code>1518147433301477068
 {No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
@@ -792,7 +770,7 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1515646548641196714
+<pre><code>1518147433394464309
 0000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
@@ -849,8 +827,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0266968 s, 196 MB/s
-## /tmp/shim_input_buf_me8sNN</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0289286 s, 181 MB/s
+## /tmp/shim_input_buf_uzhp0k</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -861,15 +839,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=suu39hxr789m5j15bfcqpcco6aro6noz]
-##   Date: 2018-01-10 20:55
+<pre><code>## Response [http://localhost:8080/upload?id=4lg1z04modmov203tcdqa65exxx72ac6]
+##   Date: 2018-02-08 19:37
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 26 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=suu39hxr789m5j15bfcqpcco6aro6noz]
-##   Date: 2018-01-10 20:55
+<pre><code>## Response [http://localhost:8080/release_session?id=4lg1z04modmov203tcdqa65exxx72ac6]
+##   Date: 2018-02-08 19:37
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
