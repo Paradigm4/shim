@@ -23,7 +23,7 @@ This is the fastest/easiest way to install shim as a system service. We provide 
 
 ```sh
 # Install with:
-gdebi shim_16.9_amd64.deb
+gdebi shim_18.1_amd64.deb
 
 # Uninstall with (be sure to uninstall any existing copy before re-installing shim):
 apt-get remove shim
@@ -42,7 +42,7 @@ Packages for some older versions can be found at https://github.com/paradigm4/sh
 # shim depends on a few libraries. If installation fails you may need to:
 yum install libgomp openssl-devel
 # Install with:
-rpm -i shim-16.9-1.x86_64.rpm
+rpm -i shim-18.1-1.x86_64.rpm
 
 # Uninstall with:
 yum remove shim
@@ -50,15 +50,15 @@ yum remove shim
 
 ## LD_LIBRARY_PATH issues
 
-By default shim installs into `/opt/scidb/16.9/bin` and expects the sibling directory `lib` to contain the `libscidbclient.so` library. This may present a problem if SciDB is installed in a different location. One way to go around the issue is by creating a symlink. For example:
+By default shim installs into `/opt/scidb/18.1/bin` and expects the sibling directory `lib` to contain the `libscidbclient.so` library. This may present a problem if SciDB is installed in a different location. One way to go around the issue is by creating a symlink. For example:
 ```bash
 ## Problem:
 $ sudo service shimsvc start
 Starting shim
-/opt/scidb/16.9/bin/shim: error while loading shared libraries: libscidbclient.so: cannot open shared object file: No such file or directory
+/opt/scidb/18.1/bin/shim: error while loading shared libraries: libscidbclient.so: cannot open shared object file: No such file or directory
 
 ## Solution: supposing SciDB was installed at ~/scidb
-$ sudo ln -s ~/scidb/lib /opt/scidb/16.9/lib
+$ sudo ln -s ~/scidb/lib /opt/scidb/18.1/lib
 $ sudo service shimsvc start
 Starting shim
 ```
@@ -133,7 +133,7 @@ If you installed the service version, then you can control when shim is running 
 ## Uninstall
 We explicitly define our SCIDB home directory for Make in the example below:
 ```
-sudo make SCIDB=/opt/scidb/16.9 uninstall
+sudo make SCIDB=/opt/scidb/18.1 uninstall
 ```
 
 ## Log files
@@ -142,7 +142,7 @@ Shim prints messages to the system log. The syslog file location varies, but can
 ## Manual Building
 Note that because shim is a SciDB client it needs the boost, zlib, log4cpp and log4cxx development libraries installed to compile. And because shim now uses PAM authentication, you'll now need the PAM development libraries for your system installed too. You also optionally need an SSL development library if you want to support TLS.
 
-A good way to satisfy most of the dependencies is to install the SciDB Development Packages as described in the [dev_tools documentation](https://github.com/paradigm4/dev_tools#required-packages-scidb-169).
+A good way to satisfy most of the dependencies is to install the SciDB Development Packages as described in the [dev_tools documentation](https://github.com/paradigm4/dev_tools#required-packages-scidb-181).
 
 ## Build and install
 ```
@@ -150,16 +150,16 @@ make
 sudo make install
 
 # Or, if SCIDB is not in the PATH, can set a Make variable SCIDB that points
-# to the SCIDB home directory, for example for version 14.12:
+# to the SCIDB home directory, for example for version 18.1:
 
-make SCIDB=/opt/scidb/15.12
-sudo make SCIDB=/opt/scidb/15.12 install
+make SCIDB=/opt/scidb/181
+sudo make SCIDB=/opt/scidb/18.1 install
 
 ```
 ## Optionally install as a service
 You can install shim as a system service so that it just runs all the time with:
 ```
-sudo make SCIDB=/opt/scidb/16.9 service
+sudo make SCIDB=/opt/scidb/18.1 service
 ```
 If you install shim as a service and want to change its default options, for example the default HTTP port or port to talk to SciDB on, you'll need to edit the shim configuration file. See the discussion of command line parameters below.
 
