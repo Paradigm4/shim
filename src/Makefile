@@ -5,7 +5,7 @@ ifeq ($(SCIDB),)
     SCIDB := $(shell dirname ${X})
   endif
 endif
-VERSION := $(shell scidb --version | head -n 1 | cut -d ':' -f 2 |tr -d ' ')
+VERSION := $(shell $(SCIDB)/bin/scidb --version | head -n 1 | cut -d ':' -f 2 |tr -d ' ')
 COMMIT := $(shell git rev-list --abbrev-commit -1 HEAD)
 
 # A way to set the 3rdparty prefix path that is convenient
