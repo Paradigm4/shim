@@ -1636,7 +1636,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 // If save is indicated, modify query
   if (strlen (save) > 0)
     {
-      if (save[0] == '(')
+      if (save[0] == '('
+          || strcmp (save, "arrow") == 0)
         {
           s->save = SAVE_BIN;
         }
@@ -1645,8 +1646,10 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
           s->save = SAVE_TXT;
         }
       if (USE_AIO == 1
-          && (save[0] == '(' || strcmp (save, "csv+") == 0
-              || strcmp (save, "lcsv+") == 0))
+          && (save[0] == '('
+              || strcmp (save, "csv+") == 0
+              || strcmp (save, "lcsv+") == 0
+              || strcmp (save, "arrow") == 0))
         {
           snprintf (qry, k + MAX_VARLEN,
                     "aio_save(%s,'path=%s','instance=%d','format=%s')",
