@@ -43,7 +43,7 @@ endif
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 
-shim: client.o sha512.o base64.o client.h
+shim: shim.c client.o sha512.o base64.o client.h
 	$(CC) -Wall $(CFLAGS) -DUSE_WEBSOCKET $(INC) $(LDFLAGS) -fpic -g -o shim shim.c mongoose.c client.o sha512.o base64.o $(LIBS) -llog4cxx -lprotobuf
 
 shim0: client.o sha512.o base64.o
