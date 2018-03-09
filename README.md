@@ -152,7 +152,7 @@ sudo make install
 # Or, if SCIDB is not in the PATH, can set a Make variable SCIDB that points
 # to the SCIDB home directory, for example for version 18.1:
 
-make SCIDB=/opt/scidb/181
+make SCIDB=/opt/scidb/18.1
 sudo make SCIDB=/opt/scidb/18.1 install
 
 ```
