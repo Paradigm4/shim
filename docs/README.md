@@ -2,7 +2,7 @@
 
 ## Manual
 
-* [shim: A Simple HTTP Service for SciDB][help.html]
+* [shim: A Simple HTTP Service for SciDB](help.html)
 
 ## Red-Hat Enterprise Linus and CentOS
 
