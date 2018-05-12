@@ -1,5 +1,9 @@
 # Paradigm4 Labs Shim Binary Packages
 
+## Manual
+
+* [shim: A Simple HTTP Service for SciDB][help.html]
+
 ## Red-Hat Enterprise Linus and CentOS
 
 * [shim-18.1-1.x86_64.rpm](shim-18.1-1.x86_64.rpm) (February 14, 2018)
