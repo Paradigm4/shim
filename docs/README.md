@@ -1,10 +1,10 @@
-# Paradigm4 Labs Shim Binary Packages
-
 ## Manual
 
 * [shim: A Simple HTTP Service for SciDB](help.html)
 
-## Red-Hat Enterprise Linus and CentOS
+## Paradigm4 Labs Shim Binary Packages
+
+### Red-Hat Enterprise Linus and CentOS
 
 * [shim-18.1-1.x86_64.rpm](shim-18.1-1.x86_64.rpm) (February 14, 2018)
 * [shim-aio-16.9-1.x86_64.rpm](shim-aio-16.9-1.x86_64.rpm) (July 11, 2017)
@@ -24,7 +24,7 @@
 * [shim-13.6-1.x86_64.rpm](shim-13.6-1.x86_64.rpm) (October 9, 2013)
 * [shim-13.3-1.x86_64.rpm](shim-13.3-1.x86_64.rpm) (October 9, 2013)
 
-## Ubuntu
+### Ubuntu
 
 * [shim_18.1_amd64.deb](shim_18.1_amd64.deb) (February 19, 2018)
 * [shim_17.1_amd64.deb](shim_17.1_amd64.deb) (September 29, 2017)
