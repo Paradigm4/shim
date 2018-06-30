@@ -122,14 +122,11 @@ typedef struct
   ShimQueryID qid;               // SciDB query identifier
   int pd;                        // output buffer file descrptor
   FILE *pf;                      //   and FILE pointer
-  int stream;                    // non-zero if output streaming enabled (DISABLED)
-  int save;                      // non-zero if output is to be saved/streamed
+  int save;                      // non-zero if output is to be saved
                                  // set to SAVE_BIN for binary
                                  // set to SAVE_TXT for text
-  int compression;               // gzip compression level for stream
   char *ibuf;                    // input buffer name
   char *obuf;                    // output (file) buffer name ////
-  char *opipe;                   // output pipe name
   void *scidb[2];                // SciDB context
   time_t time;                   // Time value to help decide on orphan sessions
   available_t available;         // 1 -> available, 0 -> not available
@@ -324,16 +321,6 @@ cleanup_session (session * s)
       unlink (s->obuf);
       free (s->obuf);
       s->obuf = NULL;
-    }
-  if (s->opipe)
-    {
-      syslog (LOG_INFO, "cleanup_session[%.*s]: unlinking opipe %p",
-              SESSIONID_SHOW_LEN,
-              s->sessionid,
-              s->opipe);
-      unlink (s->opipe);
-      free (s->opipe);
-      s->opipe = NULL;
     }
   strcpy(s->sessionid, "NA");
 }
@@ -555,10 +542,8 @@ init_session (session * s)
   gen_sessionid(s->sessionid);
   s->ibuf = (char *) malloc (PATH_MAX);
   s->obuf = (char *) malloc (PATH_MAX);
-  s->opipe = (char *) malloc (PATH_MAX);
   snprintf (s->ibuf, PATH_MAX, "%s/shim_input_buf_XXXXXX", TMPDIR);
   snprintf (s->obuf, PATH_MAX, "%s/shim_output_buf_XXXXXX", TMPDIR);
-  snprintf (s->opipe, PATH_MAX, "%s/shim_output_pipe_XXXXXX", TMPDIR);
   for (int i = 0; i < 2; i++)
     {
       s->scidb[i] = NULL;
@@ -587,10 +572,7 @@ init_session (session * s)
 // Set up the output buffer
   s->pd = 0;
   s->pf = NULL;
-// Set default behavior to not stream
-  s->stream = 0;
   s->save = 0;
-  s->compression = -1;
   fd = mkstemp (s->obuf);
   chmod (s->obuf, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
   if (fd > 0)
@@ -605,69 +587,6 @@ init_session (session * s)
       omp_unset_lock (&s->lock);
       return 0;
     }
-
-/* Set up the output pipe
- * We need to create a unique name for the pipe.  Since mkstemp can only be
- * used to create files, we will create the pipe with a generic name, then use
- * mkstemp to create file with a unique name, then rename the pipe on top of
- * the file.
- */
-  fd = mkstemp (s->opipe);
-  if (fd >= 0)
-    close (fd);
-  else
-    {
-      syslog (LOG_ERR,
-              "init_session[%.*s]: ERROR output pipe",
-              SESSIONID_SHOW_LEN,
-              s->sessionid);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
-      return 0;
-    }
-  char *pipename;
-  pipename = (char *) malloc (PATH_MAX);
-  char inpath[] = "/shim_generic_pipe_";
-  snprintf (pipename,
-            PATH_MAX,
-            "%s%s%s",
-            TMPDIR,
-            inpath,
-            s->sessionid);
-  syslog (LOG_INFO,
-          "init_session[%.*s]: create pipe, %.*s...",
-          SESSIONID_SHOW_LEN,
-          s->sessionid,
-          (int)(strlen(TMPDIR) + strlen(inpath) + SESSIONID_SHOW_LEN),
-          pipename);
-  fd =
-    mkfifo (pipename,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-  chmod (pipename, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-  if (fd != 0)
-    {
-      syslog (LOG_ERR, "init_session[%.*s]: ERROR create pipe",
-              SESSIONID_SHOW_LEN,
-              s->sessionid);
-      cleanup_session (s);
-      free (pipename);
-      omp_unset_lock (&s->lock);
-      return 0;
-    }
-  fd = rename (pipename, s->opipe);
-  if (fd != 0)
-    {
-      syslog (LOG_ERR, "init_session[%.*s]: ERROR rename pipe",
-              SESSIONID_SHOW_LEN,
-              s->sessionid);
-      unlink (pipename);
-      free (pipename);
-      cleanup_session (s);
-      omp_unset_lock (&s->lock);
-      return 0;
-    }
-  free (pipename);
-
   time (&s->time);
   s->available = SESSION_UNAVAILABLE;
   omp_unset_lock (&s->lock);
@@ -948,13 +867,12 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
         }
 
       syslog (LOG_INFO,
-              "new_session[%.*s]: ready, ibuf %s, obuf %s, opipe %s, "
+              "new_session[%.*s]: ready, ibuf %s, obuf %s, "
               "scidb[0] %p, scidb[1] %p",
               SESSIONID_SHOW_LEN,
               s->sessionid,
               s->ibuf,
               s->obuf,
-              s->opipe,
               s->scidb[0],
               s->scidb[1]);
       snprintf (buf, MAX_VARLEN, "%s", s->sessionid);
@@ -1000,12 +918,11 @@ debug (struct mg_connection *conn)
       l =
         snprintf (p,
                   k,
-                  "slot %d, sid %.*s, avail %d, opipe %s\n",
+                  "slot %d, sid %.*s, avail %d\n",
                   j,
                   SESSIONID_SHOW_LEN,
                   sessions[j].sessionid,
-                  sessions[j].available,
-                  sessions[j].opipe);
+                  sessions[j].available);
       k = k - l;
       if (k <= 0)
         break;
@@ -1101,9 +1018,7 @@ read_bytes (struct mg_connection *conn, const struct mg_request_info *ri)
 // Check to see if the output buffer is open for reading, if not do so.
   if (s->pd < 1)
     {
-      s->pd =
-        s->stream ?
-        open (s->opipe, O_RDONLY) : open (s->obuf, O_RDONLY | O_NONBLOCK);
+      s->pd = open (s->obuf, O_RDONLY | O_NONBLOCK);
 
       if (s->pd < 1)
         {
@@ -1307,7 +1222,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
   n = atoi (var);
 // Check to see if client wants the whole file at once, if so return it.
   omp_set_lock (&s->lock);
-  if ((n < 1) || s->stream)
+  if (n < 1)
     {
       syslog (LOG_INFO,
               "read_lines[%.*s]: return entire buffer",
@@ -1324,7 +1239,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
           s->sessionid);
   if (s->pd < 1)
     {
-      s->pd = open (s->stream ? s->opipe : s->obuf, O_RDONLY | O_NONBLOCK);
+      s->pd = open (s->obuf, O_RDONLY | O_NONBLOCK);
       if (s->pd < 1)
         {
           syslog (LOG_ERR,
@@ -1483,10 +1398,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
 }
 
 
-/* execute_query blocks until the query is complete. However, if stream is
- * specified, execute_query releases the lock and immediately replies to the
- * client with a query ID so that the client can wait for data, then
- * execute_query * proceeds normally until the query ends.
+/* execute_query blocks until the query is complete.
  * This function always disconnects from SciDB after completeQuery finishes.
  * query string variables:
  * id=<session id> (required)
@@ -1512,7 +1424,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int k, rel = 0, stream = 0, compression = -1;
+  int k, rel = 0;
   ShimQueryID q;
   session *s;
   char var[MAX_VARLEN];
@@ -1653,13 +1565,13 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
         {
           snprintf (qry, k + MAX_VARLEN,
                     "aio_save(%s,'path=%s','instance=%d','format=%s')",
-                    qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
+                    qrybuf, s->obuf, SAVE_INSTANCE_ID,
                     save);
         }
       else
         {
           snprintf (qry, k + MAX_VARLEN, "save(%s,'%s',%d,'%s')", qrybuf,
-                    stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID, save);
+                    s->obuf, SAVE_INSTANCE_ID, save);
         }
     }
   else
@@ -1714,8 +1626,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
              }
            s->qid = q;                    //not sure if I need these
            s->time = time (NULL) + WEEK;
-           s->stream = stream;
-           s->compression = compression;
            if (s->scidb[0])
              {
                q = execute_prepared_query (s->scidb[0], qstart, &pq, 1, SERR);
@@ -1772,8 +1682,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
  */
   s->qid = q;
   s->time = time (NULL) + WEEK;
-  s->stream = stream;
-  s->compression = compression;
   if (s->scidb[0])
     {
       q = execute_prepared_query (s->scidb[0], qry, &pq, 1, SERR);
@@ -1788,8 +1696,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               SESSIONID_SHOW_LEN,
               s->sessionid,
               SERR);
-      if (!stream)
-        respond_to_query_error(conn, s, SERR);
+      respond_to_query_error(conn, s, SERR);
       omp_unset_lock (&s->lock);
       return;
     }
