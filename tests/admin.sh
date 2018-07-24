@@ -52,20 +52,20 @@ ID=$(<$SHIM_DIR/id)
 $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
 
 
-## - Start #3
-res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
-test "$res" == "200"
-ID=$(<$SHIM_DIR/id)
+# ## - Start #3
+# res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
+# test "$res" == "200"
+# ID=$(<$SHIM_DIR/id)
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
+# $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
 
 
-## - Start #4
-res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
-test "$res" == "200"
-ID=$(<$SHIM_DIR/id)
+# ## - Start #4
+# res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
+# test "$res" == "200"
+# ID=$(<$SHIM_DIR/id)
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
+# $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
 
 
 ## - No Admin
