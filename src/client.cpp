@@ -35,6 +35,7 @@ extern "C"
 
 #include "SciDBAPI.h"
 #include "rbac/SessionProperties.h"
+#include "rbac/Credential.h"
 
 using namespace std;
 using namespace scidb;
@@ -44,24 +45,38 @@ using namespace scidb;
  * Returns a pointer to the SciDB connection context, or NULL
  * if an error occurred.
  */
-extern "C" void * scidbconnect(const char *host, int port, const char* username, const char* password, int* status)
+extern "C" void * scidbconnect(
+    const char *host,
+    int port,
+    const char* username,
+    const char* password,
+    int isAdmin,
+    int* status)
 {
   void* conn = NULL;
   scidb::SciDB& db = scidb::getSciDB();
   try
   {
+      scidb::SessionProperties props;
+
+      // Set credentials, if any
       if(username == NULL || password == NULL)
       {
-          scidb::SessionProperties props;
           props.setCredCallback(NULL, NULL); // SDB-6038
-          conn = db.connect(props, host, port);
       }
       else
       {
-          //TODO: add returned error code for auth failure
-          scidb::SessionProperties props(username, password);
-          conn = db.connect(props, host, port);
+          props.setCred(Credential(username, password));
       }
+
+      // Set admin, if enabled
+      if (isAdmin)
+      {
+          props.setPriority(SessionProperties::ADMIN);
+      }
+
+      // Attempt to connect
+      conn = db.connect(props, host, port);
       *status = SHIM_CONNECTION_SUCCESSFUL;
   }
   catch(const scidb::Exception& se)

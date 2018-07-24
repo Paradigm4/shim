@@ -39,7 +39,13 @@ struct prep
 #define SHIM_ERROR_CANT_CONNECT    -1
 #define SHIM_ERROR_AUTHENTICATION  -2
 
-void *scidbconnect(const char *host, int port, const char* username, const char* password, int* status);
+void *scidbconnect(
+    const char *host,
+    int port,
+    const char* username,
+    const char* password,
+    int isAdmin,
+    int* status);
 
 void scidbdisconnect (void *con);
 

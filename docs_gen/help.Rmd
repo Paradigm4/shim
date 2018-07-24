@@ -251,6 +251,7 @@ httr::GET("http://localhost:8080/version")
 <tr><td>DESCRIPTION  <td>Request a new HTTP session from the service.
 <tr><td>METHOD <td>GET
 <tr><td>PARAMETERS <td>
+- **admin** _optional_ 0 or 1: if set to 1, open a priority session. This is identical to the `--admin` flag for the `iquery` client (see SciDB Documentation for details). The default value is 0.
 - **user** _optional_ SciDB authentication user name
 - **password** _optional_ SciDB authentication password
 <tr><td>RESPONSE <td>
@@ -273,6 +274,9 @@ id = httr::GET("http://localhost:8080/new_session")
 (id = rawToChar(id$content))
 
 id = httr::GET("http://localhost:8080/new_session?user=foo&password=bar")
+(id = rawToChar(id$content))
+
+id = httr::GET("http://localhost:8080/new_session?admin=1")
 (id = rawToChar(id$content))
 ```
 </table>

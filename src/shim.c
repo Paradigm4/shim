@@ -809,7 +809,9 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
 {
   char USER[MAX_VARLEN];
   char PASS[MAX_VARLEN];
+  char var[MAX_VARLEN];
   char buf[MAX_VARLEN];
+  int is_admin = 0;
 
   memset (USER, 0, MAX_VARLEN);
   memset (PASS, 0, MAX_VARLEN);
@@ -820,6 +822,12 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
 
       mg_get_var (ri->query_string, k, "user", USER, MAX_VARLEN);
       mg_get_var (ri->query_string, k, "password", PASS, MAX_VARLEN);
+
+      mg_get_var (ri->query_string, k, "admin", var, MAX_VARLEN);
+      if (strlen (var) > 0)
+        {
+          is_admin = atoi (var);
+        }
     }
 
   int j = get_session ();
@@ -830,16 +838,18 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
       for (int i = 0; i < 2; i++)
         {
           syslog (LOG_INFO,
-                  "new_session[%.*s]: scidbconnect [%d], user %s",
+                  "new_session[%.*s]: scidbconnect [%d], user %s, is_admin %d",
                   SESSIONID_SHOW_LEN,
                   s->sessionid,
                   i,
-                  USER);
+                  USER,
+                  is_admin);
           int status;
           s->scidb[i] = scidbconnect (SCIDB_HOST,
                                       SCIDB_PORT,
                                       strlen (USER) > 0 ? USER : NULL,
                                       strlen (PASS) > 0 ? PASS : NULL,
+                                      is_admin,
                                       &status);
           if (!s->scidb[i])
             {
