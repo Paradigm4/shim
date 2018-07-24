@@ -41,37 +41,36 @@ ID=$(<$SHIM_DIR/id)
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=store(build(<x:double>\[i=1:10000;j=1:10000\],random()),test_admin)")
 test "$res" == "200"
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
+$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" > /dev/null &
 
 
-## - Start #2
-res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
-test "$res" == "200"
-ID=$(<$SHIM_DIR/id)
+## - Start #2..10
+for i in `seq 2 10`
+do
+    echo -n "Overloading $i..."
+    res=$(timeout 5 $CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH") \
+        || true
+    test "$res" == "200" -o "$res" == ""
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
-
-
-# ## - Start #3
-# res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
-# test "$res" == "200"
-# ID=$(<$SHIM_DIR/id)
-
-# $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
-
-
-# ## - Start #4
-# res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
-# test "$res" == "200"
-# ID=$(<$SHIM_DIR/id)
-
-# $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" &
+    if [ "$res" == "200" ]
+    then
+        echo "OK"
+        ID=$(<$SHIM_DIR/id)
+        $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" > /dev/null &
+    else
+        echo "TIMEOUT"
+        break
+    fi
+done
 
 
 ## - No Admin
-($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH" && res=0) &
-sleep 5 && res=1
-test "$res" == "1"
+echo -n "Cancel regular..."
+res=1
+timeout 5 $CURL "$SHIM_URL/new_session?$SCIDB_AUTH" > /dev/null \
+    || res=0
+test "$res" == "0"
+echo "TIMEOUT"
 
 
 ## - Admin & Cancel All
@@ -79,16 +78,29 @@ res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?admin=1&$SCIDB_AUTH")
 test "$res" == "200"
 ID=$(<$SHIM_DIR/id)
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=project(list('queries'),query_id)&save=csv")
-test "$res" == "200"
-
-res=$($CURL --output $SHIM_DIR/out "$SHIM_URL/read_lines?id=$ID")
-test "$res" == "200"
-
-sort $SHIM_DIR/out | uniq | while read QID
+while true
 do
-    res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=cancel($QID)")
-    test "$res" == "200" -o "$res" == "406"
+    res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=project(filter(list('queries'),query_string='op_count(sort(test_admin))'),query_id)&save=csv")
+    test "$res" == "200"
+
+    res=$($CURL --output $SHIM_DIR/out "$SHIM_URL/read_lines?id=$ID")
+    test "$res" == "200"
+
+    while read QID
+    do
+        echo -n "Cancel admin $QID..."
+        res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=cancel($QID)")
+        test "$res" == "200" -o "$res" == "406"
+        echo "OK"
+    done < $SHIM_DIR/out
+
+    if [ `wc --lines $SHIM_DIR/out | cut --delimiter=" " --fields=1` -eq 0 ]
+    then
+        break
+    fi
+
+    > $SHIM_DIR/out
+    sleep 5
 done
 
 
