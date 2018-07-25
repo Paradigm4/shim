@@ -397,7 +397,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2018-07-23 20:56
+  Date: 2018-07-24 18:22
   Status: 200
   Content-Type: text/plain
   Size: 7 B</code></pre>
@@ -421,7 +421,7 @@ GET
 PARAMETERS
 <td>
 <ul>
-<li><strong>admin</strong> <em>optional</em> 0 or 1: if set to 1, open a priority session. This is identical to the <code>--admin</code> flag for the <code>iquery</code> client (see SciDB Documentation for details). The default value is 0.</li>
+<li><strong>admin</strong> <em>optional</em> 0 or 1: if set to 1, open a priority session. This is identical to the <code>--admin</code> flag for the <code>iquery</code> client (see <a href="https://paradigm4.atlassian.net/wiki/spaces/scidb">SciDB Documentation</a> for details). The default value is 0.</li>
 <li><strong>user</strong> <em>optional</em> SciDB authentication user name</li>
 <li><strong>password</strong> <em>optional</em> SciDB authentication password
 <tr>
@@ -438,22 +438,22 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>8lah1niwtqzuw7dsjwvzqgvrxbg2gvm4</code></pre>
+<pre><code>gx6w6w1avby73tub0fk8ymko13uivmxr</code></pre>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
-<pre><code>wc1xzjat993lwgugspvzmq6zhmhdi3xu</code></pre>
+<pre><code>kjnqg4grguyz38a4ouc2hdqywkhr6uy6</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;vy8bxyknnn8kk2gc8bbuhite4as2upd5&quot;</code></pre>
+<pre><code>[1] &quot;d2ct68022y2mncqrn2tkvzisjzz59ysn&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;4lg1z04modmov203tcdqa65exxx72ac6&quot;</code></pre>
+<pre><code>[1] &quot;0kw69x9rbrdy33p6myqhx99wop2yna1n&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?admin=1&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;b9oapswdljhx1i0vaelk06ed3bkm1dsc&quot;</code></pre>
+<pre><code>[1] &quot;ax9juybmpo09sqfuo6b2v1yzqgddqeg1&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -489,10 +489,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;mw2b5z56ym3fk4quyseyytsikc4m5cy7&quot;</code></pre>
+<pre><code>[1] &quot;s5024botgpi8vy2zkt1vu0a0gotni94a&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=mw2b5z56ym3fk4quyseyytsikc4m5cy7]
-  Date: 2018-07-23 20:56
+<pre><code>Response [http://localhost:8080/release_session?id=s5024botgpi8vy2zkt1vu0a0gotni94a]
+  Date: 2018-07-24 18:22
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -566,14 +566,14 @@ ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1532404566818154416&quot;</code></pre>
+<pre><code>[1] &quot;1532481740152100151&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
 curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1532404566878839953</code></pre>
+<pre><code>1532481740270488206</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
@@ -583,8 +583,8 @@ session = rawToChar(id$content)
 query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=cvhduvfkkqw176urik2z5myr10y5vbr7&amp;query=consume(42)&amp;release=1]
-  Date: 2018-07-23 20:56
+<pre><code>Response [http://localhost:8080/execute_query?id=38ehvj60vblthzd46lyucvbomprgict1&amp;query=consume(42)&amp;release=1]
+  Date: 2018-07-24 18:22
   Status: 406
   Content-Type: text/html
   Size: 281 B
@@ -704,7 +704,7 @@ curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1532404566998701965
+<pre><code>1532481740389880304
 {No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
@@ -782,7 +782,7 @@ Error id: scidb::SCIDB_SE_QPROC::SCIDB_LE_LOGICAL_OP_DOESNT_EXIST
 Error description: Query processor error. SystemException in file: src/query/OperatorLibrary.cpp function: createLogicalOperator line: 78
 Error id: scidb::SCIDB_SE_QPROC::SCIDB_LE_LOGICAL_OP_DOESNT_EXIST
 Error description: Query processor error. Logical operator &#39;aio_save&#39; does not exist..
-aio_save(build(&lt;x:double&gt;[i=1:10,10,0],i),&#39;path=/opt/scidb/18.1/DB-scidb/0/0/tmp/shim_output_buf_qxf5FB&#39;,&#39;instance=0&#39;,&#39;format=(double)&#39;)
+aio_save(build(&lt;x:double&gt;[i=1:10,10,0],i),&#39;path=/opt/scidb/18.1/DB-scidb/0/0/tmp/shim_output_buf_iUcRWd&#39;,&#39;instance=0&#39;,&#39;format=(double)&#39;)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 0000000</code></pre>
 </table>
@@ -835,8 +835,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0342422 s, 153 MB/s
-## /opt/scidb/18.1/DB-scidb/0/0/tmp/shim_input_buf_Zu6v8p</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0296634 s, 177 MB/s
+## /opt/scidb/18.1/DB-scidb/0/0/tmp/shim_input_buf_5beG4w</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -847,15 +847,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=eklq62h733jphrakdj8r38n592p04fwi]
-##   Date: 2018-07-23 20:56
+<pre><code>## Response [http://localhost:8080/upload?id=avumnwdh7v3nkbz7otyye17q4msyom5y]
+##   Date: 2018-07-24 18:22
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 54 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=eklq62h733jphrakdj8r38n592p04fwi]
-##   Date: 2018-07-23 20:56
+<pre><code>## Response [http://localhost:8080/release_session?id=avumnwdh7v3nkbz7otyye17q4msyom5y]
+##   Date: 2018-07-24 18:22
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>
