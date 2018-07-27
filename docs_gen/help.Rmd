@@ -315,7 +315,6 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 - **id** an HTTP session ID obtained from `/new_session`
 - **query** AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters
 - **save** _optional_ SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by `read_lines` or `read_bytes`. If the save parameter is not specified, don't save the query output. 
-- **release** _optional_ 0 or 1: if 1 then release_session as soon as query completes. The default value is 0 if not specified (see additional notes below).
 - **prefix** _optional_ semi-colon separated URL encoded AFL statements to precede **query** in the same SciDB connection context. Mainly used for SciDB namespace and role setting.
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and SciDB query ID in text/plain payload
@@ -332,8 +331,6 @@ Remember to URL-encode the SciDB query string and special characters like the pl
 An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. `/release_session` does not have to be called after such an error. 
 <p>
 This method blocks until the query completes.
-<p>
-Do not specify the option release=1 when the save option is also set, or output will not be available to `read_bytes` or `read_lines`. Instead, explicitly call `release_session` after reading is complete. 
 <tr><td>EXAMPLE (R)
 <td>
 ```{r, comment=NA}
@@ -342,7 +339,7 @@ id = httr::GET("http://localhost:8080/new_session")
 session = rawToChar(id$content)
 
 # Construct the query request
-query = sprintf("http://localhost:8080/execute_query?id=%s&query=consume(list())&release=1",
+query = sprintf("http://localhost:8080/execute_query?id=%s&query=consume(list())",
                 session)
 ans = httr::GET(query)
 
@@ -353,14 +350,14 @@ ans = httr::GET(query)
 <td>
 ```{r, comment=NA, engine='bash'}
 s=`curl -s "http://localhost:8080/new_session"`
-curl -s "http://localhost:8080/execute_query?id=${s}&query=consume(list())&release=1"
+curl -s "http://localhost:8080/execute_query?id=${s}&query=consume(list())"
 ```
 <tr><td>EXAMPLE w/ERROR (R)
 <td>
 ```{r, comment=NA}
 id = httr::GET("http://localhost:8080/new_session")
 session = rawToChar(id$content)
-query = sprintf("http://localhost:8080/execute_query?id=%s&query=consume(42)&release=1",
+query = sprintf("http://localhost:8080/execute_query?id=%s&query=consume(42)",
                 session)
 httr::GET(query)
 ```

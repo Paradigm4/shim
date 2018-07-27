@@ -41,7 +41,7 @@ ID=$(<$SHIM_DIR/id)
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=store(build(<x:double>\[i=1:10000;j=1:10000\],random()),test_admin)")
 test "$res" == "200"
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" > /dev/null &
+$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))" > /dev/null &
 
 
 ## - Start #2..10
@@ -56,7 +56,7 @@ do
     then
         echo "OK"
         ID=$(<$SHIM_DIR/id)
-        $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))&release=1" > /dev/null &
+        $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))" > /dev/null &
     else
         echo "TIMEOUT"
         break
@@ -105,7 +105,9 @@ done
 
 
 ## - Cleanup
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=remove(test_admin)&release=1")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=remove(test_admin)")
+test "$res" == "200"
+res=$($CURL $NO_OUT "$SHIM_URL/release_session?id=$ID")
 test "$res" == "200"
 
 

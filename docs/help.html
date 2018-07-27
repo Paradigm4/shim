@@ -322,7 +322,7 @@ EXAMPLE (R)
 <td>
 <pre class="r"><code>httr::GET(&quot;http://localhost:8080/version&quot;)</code></pre>
 <pre><code>Response [http://localhost:8080/version]
-  Date: 2018-07-24 19:06
+  Date: 2018-07-27 09:32
   Status: 200
   Content-Type: text/plain
   Size: 7 B</code></pre>
@@ -363,22 +363,22 @@ EXAMPLE (curl)
 <td></li>
 </ul>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session </code></pre>
-<pre><code>bqn10t4sxchxt4j9en9xjcet12q1sue4</code></pre>
+<pre><code>ewgqq97jzqcfkhzi7nne7k3rctdct1b7</code></pre>
 <pre class="bash"><code>curl -s http://localhost:8080/new_session?user=foo&amp;password=bar </code></pre>
-<pre><code>025hbq9826lwq4l4svibnw4oeaq7k4rk</code></pre>
+<pre><code>xsynhlngczbcxaukxxekhic9r5ll6x83</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;mchx26lls7hjb23jdla1xupckfz40q5m&quot;</code></pre>
+<pre><code>[1] &quot;566mst2k9ewm466i4ki1iabafcb1pjka&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?user=foo&amp;password=bar&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;i2k19lm1s30kl4jzpag3k5f51u91kuni&quot;</code></pre>
+<pre><code>[1] &quot;67we0fep9qbtwxrgyaygk96g1hx7hih3&quot;</code></pre>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session?admin=1&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;xnjm95nhoo1a81pxb5gvqvgrpqsp0w8x&quot;</code></pre>
+<pre><code>[1] &quot;peh59vvilmrx0jeytcut119iy7pv57ya&quot;</code></pre>
 </table>
 </div>
 <div id="release_session" class="section level3">
@@ -414,10 +414,10 @@ EXAMPLE (R)
 </ul>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 (id = rawToChar(id$content))</code></pre>
-<pre><code>[1] &quot;jrj8dnq1r7rz8wczhtb84rzuxszeonbn&quot;</code></pre>
+<pre><code>[1] &quot;1vfa6q87tf5tyz77r1h8iqqhdgsy3r84&quot;</code></pre>
 <pre class="r"><code>httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;,id))</code></pre>
-<pre><code>Response [http://localhost:8080/release_session?id=jrj8dnq1r7rz8wczhtb84rzuxszeonbn]
-  Date: 2018-07-24 19:06
+<pre><code>Response [http://localhost:8080/release_session?id=1vfa6q87tf5tyz77r1h8iqqhdgsy3r84]
+  Date: 2018-07-27 09:32
   Status: 200
   Content-Type: text/plain
 &lt;EMPTY BODY&gt;</code></pre>
@@ -450,7 +450,6 @@ PARAMETERS
 <li><strong>id</strong> an HTTP session ID obtained from <code>/new_session</code></li>
 <li><strong>query</strong> AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters</li>
 <li><strong>save</strong> <em>optional</em> SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by <code>read_lines</code> or <code>read_bytes</code>. If the save parameter is not specified, don’t save the query output.</li>
-<li><strong>release</strong> <em>optional</em> 0 or 1: if 1 then release_session as soon as query completes. The default value is 0 if not specified (see additional notes below).</li>
 <li><strong>prefix</strong> <em>optional</em> semi-colon separated URL encoded AFL statements to precede <strong>query</strong> in the same SciDB connection context. Mainly used for SciDB namespace and role setting.
 <tr>
 <td>
@@ -473,8 +472,6 @@ Remember to URL-encode the SciDB query string and special characters like the pl
 An HTTP 500 or 502 error will invalidate the session and free the related resources. Any subsequent queries using such session are rejected. <code>/release_session</code> does not have to be called after such an error.
 <p>
 This method blocks until the query completes.
-<p>
-Do not specify the option release=1 when the save option is also set, or output will not be available to <code>read_bytes</code> or <code>read_lines</code>. Instead, explicitly call <code>release_session</code> after reading is complete.
 <tr>
 <td>
 EXAMPLE (R)
@@ -485,31 +482,31 @@ id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 session = rawToChar(id$content)
 
 # Construct the query request
-query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(list())&amp;release=1&quot;,
+query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(list())&quot;,
                 session)
 ans = httr::GET(query)
 
 # The response in this example is just the SciDB query ID:
 (rawToChar(ans$content))</code></pre>
-<pre><code>[1] &quot;1532484364078346198&quot;</code></pre>
+<pre><code>[1] &quot;1532709128304656286&quot;</code></pre>
 <tr>
 <td>
 EXAMPLE (curl)
 <td>
 <pre class="bash"><code>s=`curl -s &quot;http://localhost:8080/new_session&quot;`
-curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&amp;release=1&quot;</code></pre>
-<pre><code>1532484364149088318</code></pre>
+curl -s &quot;http://localhost:8080/execute_query?id=${s}&amp;query=consume(list())&quot;</code></pre>
+<pre><code>1532709128360020308</code></pre>
 <tr>
 <td>
 EXAMPLE w/ERROR (R)
 <td>
 <pre class="r"><code>id = httr::GET(&quot;http://localhost:8080/new_session&quot;)
 session = rawToChar(id$content)
-query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&amp;release=1&quot;,
+query = sprintf(&quot;http://localhost:8080/execute_query?id=%s&amp;query=consume(42)&quot;,
                 session)
 httr::GET(query)</code></pre>
-<pre><code>Response [http://localhost:8080/execute_query?id=hqiwvr78fpndrd4eo034s592utp56ww3&amp;query=consume(42)&amp;release=1]
-  Date: 2018-07-24 19:06
+<pre><code>Response [http://localhost:8080/execute_query?id=ozxqrz1wj2jl091ckniir6ws79ew4nis&amp;query=consume(42)]
+  Date: 2018-07-27 09:32
   Status: 406
   Content-Type: text/html
   Size: 281 B
@@ -629,7 +626,7 @@ curl -s &quot;http://localhost:8080/read_lines?id=${s}&amp;n=10&quot;
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1532484364292820416
+<pre><code>1532709128476355301
 {No} name,profile,deterministic,library
 {0} &#39;%&#39;,&#39;double %(double,double)&#39;,true,&#39;scidb&#39;
 {1} &#39;%&#39;,&#39;int16 %(int16,int16)&#39;,true,&#39;scidb&#39;
@@ -702,7 +699,7 @@ curl -s &quot;http://localhost:8080/read_bytes?id=${s}&quot; | od -t f8
 
 # Release the session
 curl -s &quot;http://localhost:8080/release_session?id=${s}&quot;</code></pre>
-<pre><code>1532484364387952720
+<pre><code>1532709128564129202
 0000000                        1                        2
 0000020                        3                        4
 0000040                        5                        6
@@ -759,8 +756,8 @@ dd if=/dev/urandom bs=1M count=5  | \
 curl -s &quot;http://localhost:8080/release_session?id=${id}&quot;</code></pre>
 <pre><code>## 5+0 records in
 ## 5+0 records out
-## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0327045 s, 160 MB/s
-## /opt/scidb/18.1/DB-scidb/0/0/tmp/shim_input_buf_OQ3TmO</code></pre>
+## 5242880 bytes (5.2 MB, 5.0 MiB) copied, 0.0293161 s, 179 MB/s
+## /opt/scidb/18.1/DB-scidb/0/0/tmp/shim_input_buf_T4iaXl</code></pre>
 <tr>
 <td>
 EXAMPLE (R)
@@ -771,15 +768,15 @@ session = rawToChar(id$content)
 
 # Upload a character string:
 httr::POST(sprintf(&quot;http://localhost:8080/upload?id=%s&quot;, session), body=&quot;Hello shim&quot;)</code></pre>
-<pre><code>## Response [http://localhost:8080/upload?id=785oy4xm1g3nn91do5oibym49ur5eam1]
-##   Date: 2018-07-24 19:06
+<pre><code>## Response [http://localhost:8080/upload?id=xxqtd3whqhrb4lsmsf9sulyjp8fv6pf4]
+##   Date: 2018-07-27 09:32
 ##   Status: 200
 ##   Content-Type: text/plain
 ##   Size: 54 B</code></pre>
 <pre class="r"><code># Release our session ID
 httr::GET(sprintf(&quot;http://localhost:8080/release_session?id=%s&quot;, session))</code></pre>
-<pre><code>## Response [http://localhost:8080/release_session?id=785oy4xm1g3nn91do5oibym49ur5eam1]
-##   Date: 2018-07-24 19:06
+<pre><code>## Response [http://localhost:8080/release_session?id=xxqtd3whqhrb4lsmsf9sulyjp8fv6pf4]
+##   Date: 2018-07-27 09:32
 ##   Status: 200
 ##   Content-Type: text/plain
 ## &lt;EMPTY BODY&gt;</code></pre>

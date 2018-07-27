@@ -125,7 +125,9 @@ test "$res" == "$err"
 res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
 test "$res" == "200"
 ID=$(<$SHIM_DIR/id)
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&release=1")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()")
+test "$res" == "200"
+res=$($CURL $NO_OUT "$SHIM_URL/release_session?id=$ID")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/upload?id=$ID")

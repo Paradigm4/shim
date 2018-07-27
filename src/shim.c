@@ -1434,7 +1434,7 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
 void
 execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 {
-  int k, rel = 0;
+  int k;
   ShimQueryID q;
   session *s;
   char var[MAX_VARLEN];
@@ -1458,9 +1458,17 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   k = strlen (ri->query_string);
   mg_get_var (ri->query_string, k, "id", ID, SESSIONID_LEN);
   memset (var, 0, MAX_VARLEN);
+
+  // Disable `release` in https://github.com/Paradigm4/shim/issues/88
+  /*
+  int rel = 0;
   mg_get_var (ri->query_string, k, "release", var, MAX_VARLEN);
   if (strlen (var) > 0)
-    rel = atoi (var);
+    {
+      rel = atoi (var);
+    }
+  */
+
   memset (var, 0, MAX_VARLEN);
   s = find_session (ID);
   if (!s)
@@ -1720,6 +1728,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
           "execute_query[%.*s]: done",
           SESSIONID_SHOW_LEN,
           s->sessionid);
+
+  // Disable `release` in https://github.com/Paradigm4/shim/issues/88
+  /*
   if (rel > 0)
     {
       syslog (LOG_INFO,
@@ -1739,6 +1750,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               s->sessionid);
       cleanup_session (s);
     }
+  */
+
   time (&s->time);
   omp_unset_lock (&s->lock);
   // Respond to the client (the query ID)
