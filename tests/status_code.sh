@@ -87,16 +87,6 @@ then
     cred="user=INVALID&password=INVALID"
     res=$($CURL "$SHIM_URL/new_session?$cred")
     test "$res" == "SciDB authentication failed401"
-
-    # ## Prep
-    # res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session")
-    # test "$res" == "200"
-    # ID=$(<$SHIM_DIR/id)
-
-    # ## No credentials on /new_session
-    # arg="query=list()&release=1"
-    # res=$($CURL "$SHIM_URL/execute_query?id=$ID&$cred&$arg")
-    # test "$res" == "401"
 fi
 
 
@@ -137,9 +127,6 @@ test "$res" == "200"
 ID=$(<$SHIM_DIR/id)
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&release=1")
 test "$res" == "200"
-
-# res=$($CURL "$SHIM_URL/upload_file?id=$ID")
-# test "$res" == "$err"
 
 res=$($CURL "$SHIM_URL/upload?id=$ID")
 test "$res" == "$err"
