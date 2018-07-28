@@ -544,8 +544,33 @@ init_session (session * s)
   int fd;
   omp_set_lock (&s->lock);
   gen_sessionid(s->sessionid);
+
   s->ibuf = (char *) malloc (PATH_MAX);
+  if (!s->ibuf)
+    {
+      syslog (LOG_ERR,
+              "init_session[%.*s]: ERROR %s",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              MSG_ERR_HTTP_500_OOM);
+      cleanup_session (s);
+      omp_unset_lock (&s->lock);
+      return 0;
+    }
+
   s->obuf = (char *) malloc (PATH_MAX);
+  if (!s->obuf)
+    {
+      syslog (LOG_ERR,
+              "init_session[%.*s]: ERROR %s",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              MSG_ERR_HTTP_500_OOM);
+      cleanup_session (s);
+      omp_unset_lock (&s->lock);
+      return 0;
+    }
+
   snprintf (s->ibuf, PATH_MAX, "%s/shim_input_buf_XXXXXX", TMPDIR);
   snprintf (s->obuf, PATH_MAX, "%s/shim_output_buf_XXXXXX", TMPDIR);
   for (int i = 0; i < 2; i++)
