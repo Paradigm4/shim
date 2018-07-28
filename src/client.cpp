@@ -130,6 +130,7 @@ executeQuery(void *con, char *query, int afl, char *err)
   scidb::QueryResult queryResult;
   try{
     db.executeQuery(queryString, bool(afl), queryResult, (void *)con);
+    db.completeQuery(queryResult.queryID, (void *)con);
     id = (unsigned long long)queryResult.queryID.getId();
   } catch(std::exception& e)
   {

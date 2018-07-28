@@ -489,7 +489,11 @@ cancel (struct mg_connection *conn, const struct mg_request_info *ri)
           s->scidb[1],
           var1);
   memset (SERR, 0, MAX_VARLEN);
-  executeQuery (s->scidb[1], var1, 1, SERR);
+
+  if (s->scidb[1])
+    {
+      executeQuery (s->scidb[1], var1, 1, SERR);
+    }
   syslog (LOG_INFO,
           "cancel[%.*s]: result %s",
           SESSIONID_SHOW_LEN,
@@ -1719,7 +1723,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       return;
     }
   if (s->scidb[0])
-    completeQuery (q, s->scidb[0], SERR);
+    {
+      completeQuery (q, s->scidb[0], SERR);
+    }
 
   free (qry);
   free (qrybuf);

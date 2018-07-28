@@ -10,9 +10,10 @@ HTTP_AUTH=homer:elmo
 
 SHIM_DIR=$(mktemp --directory)
 CURL="curl --digest --user $HTTP_AUTH --write-out %{http_code} --silent"
+NO_OUT="--output /dev/null"
 SHIM_URL="http://$HOST:$PORT"
 SCIDB_AUTH="user=root&password=Paradigm4"
-DELAY="build(<x:int64>\\[i=0:0\\],sleep(2))"
+DELAY="build(<x:int64>\\[i=0:0\\],sleep(20))"
 
 set -o errexit
 
@@ -52,12 +53,24 @@ ID=$(<$SHIM_DIR/id)
 $CURL "$SHIM_URL/execute_query?id=$ID&query=$DELAY&save=csv" \
     || true                                                  \
     &
-sleep 1
+sleep 2
 
 
 ## 3. Cancel: OK
 res=$($CURL "$SHIM_URL/cancel?id=$ID")
 test "$res" == "200"
+sleep 2
+
+
+## 4. Query Not Present in List Queries
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=filter(list('queries'),substr(query_string,0,7)='cancel(')&save=csv")
+test "$res" == "200"
+
+> $SHIM_DIR/out
+res=$($CURL --output $SHIM_DIR/out "$SHIM_URL/read_lines?id=$ID")
+test "$res" == "200"
+
+test `wc --lines $SHIM_DIR/out | cut --delimiter=" " --fields=1` -eq 0
 
 
 echo "PASS"
