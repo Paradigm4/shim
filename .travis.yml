@@ -30,16 +30,17 @@ before_install:
   - docker exec scidb service shimsvc stop
 
 install:
-  - docker exec scidb make --directory=/shim/accelerated_io_tools-master
-  - docker exec scidb cp
-    /shim/accelerated_io_tools-master/libaccelerated_io_tools.so
-    /opt/scidb/18.1/lib/scidb/plugins/
   - docker exec scidb apt-get update
   - docker exec scidb apt-get install
     --assume-yes
     --no-install-recommends
     busybox-syslogd
     curl
+    libarrow-dev
+  - docker exec scidb make --directory=/shim/accelerated_io_tools-master
+  - docker exec scidb cp
+    /shim/accelerated_io_tools-master/libaccelerated_io_tools.so
+    /opt/scidb/18.1/lib/scidb/plugins/
   - docker exec scidb ln --symbolic
     /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim install
