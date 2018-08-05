@@ -38,17 +38,23 @@ res=$($CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH")
 test "$res" == "200"
 ID=$(<$SHIM_DIR/id)
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=store(build(<x:double>\[i=1:10000;j=1:10000\],random()),test_admin)")
+res=$($CURL                                                                                                           \
+          $NO_OUT                                                                                                     \
+          "$SHIM_URL/execute_query?id=$ID&query=store(build(<x:double>\[i=1:10000;j=1:10000\],random()),test_admin)")
 test "$res" == "200"
 
-$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))" > /dev/null &
+$CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))" \
+      > /dev/null &
 
 
 ## - Start #2..10
 for i in `seq 2 10`
 do
     echo -n "Overloading $i..."
-    res=$(timeout 5 $CURL --output $SHIM_DIR/id "$SHIM_URL/new_session?$SCIDB_AUTH") \
+    res=$(timeout 5 \
+                  $CURL \
+                  --output $SHIM_DIR/id \
+                  "$SHIM_URL/new_session?$SCIDB_AUTH") \
         || true
     test "$res" == "200" -o "$res" == ""
 
@@ -56,7 +62,10 @@ do
     then
         echo "OK"
         ID=$(<$SHIM_DIR/id)
-        $CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))" > /dev/null &
+        $CURL                                                                   \
+            $NO_OUT                                                             \
+            "$SHIM_URL/execute_query?id=$ID&query=op_count(sort(test_admin))"   \
+            > /dev/null &
     else
         echo "TIMEOUT"
         break
@@ -80,7 +89,9 @@ ID=$(<$SHIM_DIR/id)
 
 while true
 do
-    res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=project(filter(list('queries'),query_string='op_count(sort(test_admin))'),query_id)&save=csv")
+    res=$($CURL                                                                                                                                    \
+              $NO_OUT                                                                                                                              \
+              "$SHIM_URL/execute_query?id=$ID&query=project(filter(list('queries'),query_string='op_count(sort(test_admin))'),query_id)&save=csv")
     test "$res" == "200"
 
     res=$($CURL --output $SHIM_DIR/out "$SHIM_URL/read_lines?id=$ID")

@@ -827,6 +827,14 @@ upload_file (struct mg_connection *conn, const struct mg_request_info *ri)
 
 /* Obtain a new session for the mongoose client in conn.
  *
+ * Parameters:
+ * user=<user name> (optional)
+ * password=<password> (optional)
+ * admin={0 or 1} (optional, default 0) if set to 1, open a
+ *   higher-priority session. This is identical to the --admin flag
+ *   for the iquery client (see SciDB Documentation for details). The
+ *   default value is 0.  user optional SciDB authentication user name
+ *
  * Respond to the client connection as follows:
  * 200 success
  * 401 authentication failure
@@ -1442,13 +1450,23 @@ read_lines (struct mg_connection *conn, const struct mg_request_info *ri)
  * query string variables:
  * id=<session id> (required)
  * query=<query string> (required)
- * release={0 or 1}  (optional, default 0)
- *   release > 0 invokes release_session after completeQuery.
+ * prefix=<query string> (optional) a statement to execute first, if supplied
  * save=<format string> (optional, default 0-length string)
  *   set the save format to something to wrap the query in a save
- * user=<user name> (optional)
- * password=<password> (optional)
- * prefix=<query string> (optional) a statement to execute first, if supplied
+ * atts_only={0 or 1} (optional, default 1) specify whether the output
+ *   should only include attribute values or include attribute as well
+ *   as dimension values. If atts_only=0 is specified the dimension
+ *   values are appended for each cell after the attribute values. The
+ *   type used for the dimension values is int64. This setting is only
+ *   applicable when the "save" with either binary or the "arrow"
+ *   formats is used. For the binary format, the format specification
+ *   has to include an int64 type specifications (appended at the end)
+ *   for each of the input array dimensions.
+ *
+ * DISABLED
+ * release={0 or 1}  (optional, default 0)
+ *   release > 0 invokes release_session after completeQuery.
+ *
  *
  * A 500 or 502 error invalidates and releases the session.
  *
@@ -1471,6 +1489,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   char save[MAX_VARLEN];
   char SERR[MAX_VARLEN];
   char ID[SESSIONID_LEN];
+  int atts_only = 1;
+
   char *qrybuf, *qry, *prefix;
   struct prep pq;               // prepared query storage
 
@@ -1610,10 +1630,17 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               || strcmp (save, "lcsv+") == 0
               || strcmp (save, "arrow") == 0))
         {
+           mg_get_var (ri->query_string, k, "atts_only", var, MAX_VARLEN);
+           if (strlen (var) > 0)
+             {
+                atts_only = atoi (var);
+             }
+
           snprintf (qry, k + MAX_VARLEN,
-                    "aio_save(%s,'path=%s','instance=%d','format=%s')",
+                    "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d')",
                     qrybuf, s->obuf, SAVE_INSTANCE_ID,
-                    save);
+                    save,
+                    atts_only);
         }
       else
         {
