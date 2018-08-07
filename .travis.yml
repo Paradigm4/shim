@@ -13,10 +13,10 @@ services:
   - docker
 
 before_install:
-  - mkdir accelerated_io_tools
-  - wget --no-verbose --output-document -
-    https://github.com/Paradigm4/accelerated_io_tools/archive/master.tar.gz
-    | tar --extract --gzip --directory=.
+  # - mkdir accelerated_io_tools
+  # - wget --no-verbose --output-document -
+  #   https://github.com/Paradigm4/accelerated_io_tools/archive/master.tar.gz
+  #   | tar --extract --gzip --directory=.
   - docker pull rvernica/scidb:${SCIDB_VER}-ext
   - docker run
     --name scidb
@@ -36,11 +36,11 @@ install:
     --no-install-recommends
     busybox-syslogd
     curl
-    libarrow-dev
-  - docker exec scidb make --directory=/shim/accelerated_io_tools-master
-  - docker exec scidb cp
-    /shim/accelerated_io_tools-master/libaccelerated_io_tools.so
-    /opt/scidb/18.1/lib/scidb/plugins/
+  #   libarrow-dev
+  # - docker exec scidb make --directory=/shim/accelerated_io_tools-master
+  # - docker exec scidb cp
+  #   /shim/accelerated_io_tools-master/libaccelerated_io_tools.so
+  #   /opt/scidb/18.1/lib/scidb/plugins/
   - docker exec scidb ln --symbolic
     /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim install
