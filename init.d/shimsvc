@@ -33,7 +33,7 @@ SCIDBPORT=
 TMPD=
 USER=root
 AIO=
-# This parsing is pretty lame
+
 if test -f "/var/lib/shim/conf"; then
   PORTS="$(cat /var/lib/shim/conf | sed -n /^ports/p | cut -d '=' -f 2 | tr -d '\r')"
   SCIDBPORT="$(cat /var/lib/shim/conf | sed -n /^scidbport/p | cut -d '=' -f 2 | tr -d '\r')"
