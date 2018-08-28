@@ -3,27 +3,82 @@
   <head>
     <meta charset="UTF-8">
     <title>SciDB Shim Dashboard</title>
+    <style>
+      table {
+          font: small "Courier New", sans-serif;
+      }
+    </style>
   </head>
 
   <body>
-    <table>
+
+    <table border="1" cellspacing="0">
       <thead>
         <tr>
-          <th colspan="2">The table header</th>
+          <th>
+            <input id="que_button"
+                   class="que"
+                   type="button"
+                   value="Refresh"
+                   onClick="getQueries()"
+                   disabled />
+          </th>
+          <th colspan="11">list('queries')</th>
+        </tr>
+        <tr>
+          <th>Action</th>
+          <th title="inst (int64)">Instance</th>
+          <th title="n (int64)">#</th>
+          <th title="query_id (string)">Query ID</th>
+          <th title="coordinator (uint64)">Coordinator</th>
+          <th title="query_string (string)">Query String</th>
+          <th title="creation_time (datetime)">Creation Time</th>
+          <th title="error code (int32)">Error Code</th>
+          <th title="error (string)">Error</th>
+          <th title="idle (bool)">Idle</th>
+          <th title="user_id (uint64)">User ID</th>
+          <th title="user (string)">User</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="que_body">
+      </tbody>
+      <tfoot>
+        <tr><td id="que_foot" colspan="12">Loading...</td></tr>
+      </tfoot>
+    </table>
+
+    <p/>
+
+    <table border="1" cellspacing="0">
+      <thead>
         <tr>
-          <td>The table body</td>
-          <td>with two columns</td>
+          <th colspan="2">
+            <input id="ins_button"
+                   type="button"
+                   value="Refresh"
+                   onClick="getInstances()"
+                   disabled />
+          </th>
+          <th colspan="4">list('instances')</th>
         </tr>
+        <tr>
+          <th title="No (int64)">#</th>
+          <th title="name (string)">Name</th>
+          <th title="port (uint16)">Port</th>
+          <th title="instance_id (uint64)">Instance ID</th>
+          <th title="online_since (string)">Online Since</th>
+          <th title="instance_path (string)">Instance Path</th>
+        </tr>
+      </thead>
+      <tbody id="ins_body">
       </tbody>
       <tfoot>
         <tr>
-          <td id="table_foot" colspan="2">Loading...</td>
+          <td id="ins_foot" colspan="6">Loading...</td>
         </tr>
       </tfoot>
     </table>
+
     <script src="js/dashboard.js"></script>
   </body>
 </html>
