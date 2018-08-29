@@ -7,6 +7,7 @@ statusBar.textContent = 'Loading...';
 
 var tableQue = document.getElementById('que_body');
 var tableIns = document.getElementById('ins_body');
+var tableSts = document.getElementById('sts_body');
 
 
 function setDisabled(value) {
@@ -82,8 +83,11 @@ function parseResult(data) {
 }
 
 function populateTable(results, table, postProcess) {
+    // Empty table
     while (table.firstChild)
         table.removeChild(table.firstChild);
+
+    // Populate table
     results.forEach(function(result) {
         var tr = document.createElement('tr');
         result.forEach(function(value) {
@@ -91,14 +95,19 @@ function populateTable(results, table, postProcess) {
             td.textContent = value;
             tr.appendChild(td);
         });
+
+        // Row post-processing if provided
         if (typeof postProcess !== 'undefined')
             postProcess(tr);
+
         table.appendChild(tr);
     });
 }
 
 function shimQuery(query, table, postProcess, finalize) {
     statusBar.textContent = 'Loading...';
+    setDisabled(true);
+
     shimRequest(
         'execute_query',
         'query=' + query + '&save=csv%2B',
@@ -120,7 +129,10 @@ function shimQuery(query, table, postProcess, finalize) {
                     }
 
                     populateTable(parseResult(data), table, postProcess);
+
                     statusBar.textContent = 'Ready.';
+                    setDisabled(false);
+
                     if (typeof finalize !== 'undefined')
                         finalize();
                 });
@@ -128,7 +140,6 @@ function shimQuery(query, table, postProcess, finalize) {
 }
 
 function getQueries(init=false) {
-    setDisabled(true);
     shimQuery(
         "filter(list('queries'),query_string<>'')",
         tableQue,
@@ -147,22 +158,31 @@ function getQueries(init=false) {
             return tr;
         },
         function() {
-            setDisabled(false);
             if (init === true) {
-                getInstances();
+                getInstances(true);
             }
         });
 }
 
-function getInstances() {
-    setDisabled(true);
+function getInstances(init=false) {
     shimQuery(
         "list('instances')",
         tableIns,
         undefined,
         function() {
-            setDisabled(false);
+            if (init === true) {
+                getStats();
+            }
         });
+}
+
+function getStats() {
+    shimQuery(
+        "filter(stats_query()," +
+            "query_str<>'' and query_status='1 - active')",
+        tableSts,
+        undefined,
+        undefined);
 }
 
 function cancelQuery(qid) {
@@ -198,6 +218,7 @@ function initialize() {
 
             sessionID = data;
             console.log('Session ID: ' + sessionID);
+
             getQueries(true);
         });
 }
