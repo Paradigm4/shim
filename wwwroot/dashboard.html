@@ -16,9 +16,7 @@
       <thead>
         <tr>
           <th>
-            <input id="que_button"
-                   class="que"
-                   type="button"
+            <input type="button"
                    value="Refresh"
                    onClick="getQueries()"
                    disabled />
@@ -42,9 +40,6 @@
       </thead>
       <tbody id="que_body">
       </tbody>
-      <tfoot>
-        <tr><td id="que_foot" colspan="12">Loading...</td></tr>
-      </tfoot>
     </table>
 
     <p/>
@@ -53,8 +48,7 @@
       <thead>
         <tr>
           <th colspan="2">
-            <input id="ins_button"
-                   type="button"
+            <input type="button"
                    value="Refresh"
                    onClick="getInstances()"
                    disabled />
@@ -72,12 +66,9 @@
       </thead>
       <tbody id="ins_body">
       </tbody>
-      <tfoot>
-        <tr>
-          <td id="ins_foot" colspan="6">Loading...</td>
-        </tr>
-      </tfoot>
     </table>
+
+    <p id="status_bar">Loading...</p>
 
     <script src="js/dashboard.js"></script>
   </body>

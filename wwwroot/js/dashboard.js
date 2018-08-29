@@ -1,27 +1,23 @@
 var baseURL = 'http://localhost:8080';
 
-var sessionQue = undefined;
-var sessionIns = undefined;
+var sessionID = undefined;
+
+var statusBar = document.getElementById('status_bar');
+statusBar.textContent = 'Loading...';
 
 var tableQue = document.getElementById('que_body');
 var tableIns = document.getElementById('ins_body');
 
-var statusQue = document.getElementById('que_foot');
-var statusIns = document.getElementById('ins_foot');
 
-statusQue.textContent = 'Loading...';
-statusIns.textContent = 'Loading...';
-
-
-function setDisabledClass(className, value) {
+function setDisabled(value) {
     [].forEach.call(
-        document.getElementsByClassName(className),
+        document.getElementsByTagName('input'),
         function(el) {
             el.disabled = value;
         });
 }
 
-function shimRequest(sessionID, endpoint, args, status, requestHandler) {
+function shimRequest(endpoint, args, requestHandler) {
     var request = new XMLHttpRequest();
 
     var url = baseURL + '/' + endpoint + '?';
@@ -31,7 +27,6 @@ function shimRequest(sessionID, endpoint, args, status, requestHandler) {
     if (args) {
         url += args;
     }
-    // url = encodeURI(url);
     console.log('shimRequest: ' + url);
 
     request.open('GET', url, true);
@@ -45,7 +40,7 @@ function shimRequest(sessionID, endpoint, args, status, requestHandler) {
     request.addEventListener(
         'error',
         function() {
-            status.textContent = 'Shim connection error!';
+            statusBar.textContent = 'Shim connection error!';
         });
 
     request.send();
@@ -102,47 +97,40 @@ function populateTable(results, table, postProcess) {
     });
 }
 
-function shimQuery(
-    sessionID, query, status, table, postProcess, finalize) {
-    status.textContent = 'Loading...';
+function shimQuery(query, table, postProcess, finalize) {
+    statusBar.textContent = 'Loading...';
     shimRequest(
-        sessionID,
         'execute_query',
         'query=' + query + '&save=csv%2B',
-        status,
         function(code, data) {
             console.log(data);
             if (code !== 200) {
-                status.textContent = 'Shim error! ' + code;
+                statusBar.textContent = 'Shim error! ' + code;
                 return;
             }
 
             shimRequest(
-                sessionID,
                 'read_lines',
                 undefined,
-                status,
                 function(code, data) {
                     console.log(data);
                     if (code !== 200) {
-                        status.textContent = 'Shim error! ' + code;
+                        statusBar.textContent = 'Shim error! ' + code;
                         return;
                     }
 
                     populateTable(parseResult(data), table, postProcess);
-                    status.textContent = 'Ready.';
+                    statusBar.textContent = 'Ready.';
                     if (typeof finalize !== 'undefined')
                         finalize();
                 });
         });
 }
 
-function getQueries() {
-    setDisabledClass('que', true);
+function getQueries(init=false) {
+    setDisabled(true);
     shimQuery(
-        sessionQue,
         "filter(list('queries'),query_string<>'')",
-        statusQue,
         tableQue,
         function(tr) {
             var qid = tr.childNodes[2].textContent;
@@ -151,7 +139,6 @@ function getQueries() {
             inp.value = 'Cancel';
             inp.type = 'button';
             inp.onclick = function() {cancelQuery(qid);};
-            inp.classList.add('que');
 
             var td = document.createElement('td');
             td.appendChild(inp);
@@ -160,78 +147,58 @@ function getQueries() {
             return tr;
         },
         function() {
-            setDisabledClass('que', false);
+            setDisabled(false);
+            if (init === true) {
+                getInstances();
+            }
         });
 }
 
 function getInstances() {
+    setDisabled(true);
     shimQuery(
-        sessionIns,
         "list('instances')",
-        statusIns,
         tableIns,
         undefined,
-        undefined);
+        function() {
+            setDisabled(false);
+        });
 }
 
 function cancelQuery(qid) {
-    setDisabledClass('que', true);
-    statusQue.textContent = 'Cancelling...';
+    setDisabled(true);
+    statusBar.textContent = 'Cancelling...';
     shimRequest(
-        sessionQue,
         'execute_query',
         "query=cancel('" + qid + "')",
-        statusQue,
         function(code, data) {
             console.log(data);
             if (code === 200 ||
                 code === 406 &&
                 data.indexOf('Query ' + qid + ' not found') !== -1) {
-                statusQue.textContent = 'Ready.';
-                setDisabledClass('que', false);
+                statusBar.textContent = 'Ready.';
+                setDisabled(false);
                 getQueries();
             } else {
-                statusQue.textContent = 'Shim error! ' + code;
+                statusBar.textContent = 'Shim error! ' + code;
                 return;
             }});
 }
 
 function initialize() {
     shimRequest(
-        undefined,
         'new_session',
         'admin=1',
-        statusQue,
         function(code, data) {
             console.log(data);
             if (code !== 200) {
-                statusQue.textContent = 'Shim error! ' + code;
+                statusBar.textContent = 'Shim error! ' + code;
                 return;
             }
 
             sessionID = data;
             console.log('Session ID: ' + sessionID);
-            sessionQue = sessionID;
-            getQueries();
-        });
-
-    shimRequest(
-        undefined,
-        'new_session',
-        undefined,
-        statusIns,
-        function(code, data) {
-            console.log(data);
-            if (code !== 200) {
-                statusIns.textContent = 'Shim error! ' + code;
-                return;
-            }
-
-            sessionID = data;
-            console.log('Session ID: ' + sessionID);
-            sessionIns = sessionID;
-            getInstances();
-            document.getElementById('ins_button').disabled=false;
+            getQueries(true);
         });
 }
 
