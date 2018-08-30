@@ -73,44 +73,45 @@
     <table border="1" cellspacing="0">
       <thead>
         <tr>
-          <th colspan="2">
+          <th>
             <input type="button"
                    value="Refresh"
                    onClick="getStats()"
                    disabled />
           </th>
-          <th colspan="29">stats_query()</th>
+          <th colspan="31">stats_query()</th>
         </tr>
         <tr>
+          <th>Action</th>
           <th title="inst (int64)">Instance</th>
           <th title="n (int64)">#</th>
           <th title="query_id (string): The query identifier">Query ID</th>
-          <th title="time_since_start_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated">Time Since Start (ms)</th>
-          <th title="time_since_reset_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated">Time Since Reset (ms)</th>
-          <th title="time_active_since_start_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated in which the query was active">Time Active Since Start (ms)</th>
-          <th title="time_active_since_reset_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated in which the query was active">Time Active Since Reset (ms)</th>
-          <th title="bytes_net_send (uint64): Size of chunks sent across the network on behalf of this query in bytes">Net Sent (bytes)</th>
-          <th title="bytes_net_recv (uint64): Size of chunks received on behalf of this query from the network in bytes">Net Received (bytes)</th>
-          <th title="bytes_mem_available (uint64): Total size of all RAM currently available to this query in bytes">Mem Available (bytes)</th>
-          <th title="bytes_mem_allocated (uint64): Total size of all RAM currently allocated by this query in bytes">Mem Allocated (bytes)</th>
-          <th title="bytes_mem_peak_usage (uint64): Maximum amount of RAM allocated by this query in bytes">Mem Peak (bytes)</th>
+          <th title="time_since_start_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated">Time Since Start</th>
+          <th title="time_since_reset_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated">Time Since Reset</th>
+          <th title="time_active_since_start_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated in which the query was active">Time Active Since Start</th>
+          <th title="time_active_since_reset_ms (uint64): Amount of time that has elapsed, in milliseconds, since this query stated in which the query was active">Time Active Since Reset</th>
+          <th title="bytes_net_send (uint64): Size of chunks sent across the network on behalf of this query in bytes">Net Sent</th>
+          <th title="bytes_net_recv (uint64): Size of chunks received on behalf of this query from the network in bytes">Net Received</th>
+          <th title="bytes_mem_available (uint64): Total size of all RAM currently available to this query in bytes">Mem Available</th>
+          <th title="bytes_mem_allocated (uint64): Total size of all RAM currently allocated by this query in bytes">Mem Allocated</th>
+          <th title="bytes_mem_peak_usage (uint64): Maximum amount of RAM allocated by this query in bytes">Mem Peak</th>
           <th title="mem_allocations (uint64): Number of allocations made by this query">Mem Allocations</th>
-          <th title="cache_used_mem_size (uint64): Total size of all mem chunks currently in cache on behalf of this query in bytes">Cache Used Mem Size (bytes)</th>
-          <th title="cache_swap_bytes (uint64): Size of mem chunks written to disk on behalf of this query (cache swap out) in bytes">Cache Swap (bytes)</th>
+          <th title="cache_used_mem_size (uint64): Total size of all mem chunks currently in cache on behalf of this query in bytes">Cache Used Mem Size</th>
+          <th title="cache_swap_bytes (uint64): Size of mem chunks written to disk on behalf of this query (cache swap out) in bytes">Cache Swap</th>
           <th title="cache_swap_num (uint64): Number of mem chuncks written to disk on behalf of this query">Cache Swap Num</th>
-          <th title="cache_load_bytes (uint64): Size of mem chunks read off disk (due to read cache miss) on behalf of this query in bytes">Cache Load (bytes)</th>
+          <th title="cache_load_bytes (uint64): Size of mem chunks read off disk (due to read cache miss) on behalf of this query in bytes">Cache Load</th>
           <th title="cache_load_num (uint64): Number of mem chunks read off disk on behalf of this query">Cache Load Num</th>
-          <th title="cache_drop_bytes (uint64): Size of mem chunks dropped from cache on behalf of this query in bytes">Cache Drop (bytes)</th>
+          <th title="cache_drop_bytes (uint64): Size of mem chunks dropped from cache on behalf of this query in bytes">Cache Drop</th>
           <th title="cache_drop_num (uint64): Number of mem chunks dropped from cache on behalf of this query">Cache Drop Num</th>
-          <th title="time_cache_write_ms (uint64): Time that this query spent waiting on Mem chunk writes in milliseconds">Time Cache Write (ms)</th>
-          <th title="time_cache_read_ms (uint64): Time that this query spent waiting on Mem chunk reads in milliseconds">Time Cache Read (ms)</th>
+          <th title="time_cache_write_ms (uint64): Time that this query spent waiting on Mem chunk writes in milliseconds">Time Cache Write</th>
+          <th title="time_cache_read_ms (uint64): Time that this query spent waiting on Mem chunk reads in milliseconds">Time Cache Read</th>
           <th title="num_db_wr (uint64): Number of DB Chunks written to disk on behalf of this query">Num DB Write</th>
-          <th title="bytes_compr_db_wr (uint64): Total size of all compressed DB Chunks written to disk on behalf of this query in bytes">Compress DB Write (bytes)</th>
-          <th title="bytes_decomp_db_wr (uint64): Total size of all decompressed DB Chunks written to disk on behalf of this query in bytes">Decompress DB Write (bytes)</th>
+          <th title="bytes_compr_db_wr (uint64): Total size of all compressed DB Chunks written to disk on behalf of this query in bytes">Compress DB Write</th>
+          <th title="bytes_decomp_db_wr (uint64): Total size of all decompressed DB Chunks written to disk on behalf of this query in bytes">Decompress DB Write</th>
           <th title="num_db_rd (uint64): Number of compressed DB Chunks read from disk on behalf of this query">Num DB Read</th>
-          <th title="bytes_compr_db_rd (uint64): Total size of all compressed DB Chunks read from disk on behalf of this query in bytes">Compress DB Read (bytes)</th>
-          <th title="bytes_decomp_db_rd (uint64): Total size of all decompressed DB Chunks read from disk on behalf of this query in bytes">Decompress DB Read (bytes)</th>
-          <th title="time_catalog_access_ms (uint64): Time spent waiting on the execution of system catalogue queries on behalf of this query in milliseconds">Time Catalog Access (ms)</th>
+          <th title="bytes_compr_db_rd (uint64): Total size of all compressed DB Chunks read from disk on behalf of this query in bytes">Compress DB Read</th>
+          <th title="bytes_decomp_db_rd (uint64): Total size of all decompressed DB Chunks read from disk on behalf of this query in bytes">Decompress DB Read</th>
+          <th title="time_catalog_access_ms (uint64): Time spent waiting on the execution of system catalogue queries on behalf of this query in milliseconds">Time Catalog Access</th>
           <th title="query_status (string): The completion status of this query.  One of the following: 0 - pending, 1 - active, 2 - completed, 3 - errors">Query Status</th>
           <th title="query_str (string): The string that instantiated this query.">Query String</th>
         </tr>

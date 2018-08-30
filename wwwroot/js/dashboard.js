@@ -18,6 +18,31 @@ function setDisabled(value) {
         });
 }
 
+function bytesForHuman(value) {
+    if (typeof value !== "float")
+        value = parseFloat(value);
+    var units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    var i = 0;
+    while (i < units.length - 1 && value >= 1024) {
+        value /= 1024;
+        i++;
+    }
+    return (Math.round(value * 10) / 10).toString() + units[i]
+}
+
+function msForHuman(value) {
+    if (typeof value !== "float")
+        value = parseFloat(value);
+    var units = ['ms', 'sec', 'min', 'h', 'd'];
+    var factor = [1000, 60, 60, 24, 1];
+    var i = 0;
+    while (i < units.length - 1 && value >= factor[i]) {
+        value /= factor[i];
+        i++;
+    }
+    return (Math.round(value * 10) / 10).toString() + units[i]
+}
+
 function shimRequest(endpoint, args, requestHandler) {
     var request = new XMLHttpRequest();
 
@@ -181,7 +206,32 @@ function getStats() {
         "filter(stats_query()," +
             "query_str<>'' and query_status='1 - active')",
         tableSts,
-        undefined,
+        function(tr) {
+            var qid = tr.childNodes[2].textContent;
+
+            var inp = document.createElement('input');
+            inp.value = 'Cancel';
+            inp.type = 'button';
+            inp.onclick = function() {cancelQuery(qid);};
+
+            var td = document.createElement('td');
+            td.appendChild(inp);
+
+            tr.insertBefore(td, tr.firstChild);
+
+            var byteFields = [
+                8, 9, 10, 11, 12, 14, 15, 17, 19, 24, 25, 27, 28];
+            byteFields.forEach(function(el) {
+                tr.children[el].textContent = bytesForHuman(
+                    tr.children[el].textContent)});
+
+            var msFields = [4, 5, 6, 7, 21, 22, 29];
+            msFields.forEach(function(el) {
+                tr.children[el].textContent = msForHuman(
+                    tr.children[el].textContent)});
+
+            return tr;
+        },
         undefined);
 }
 
