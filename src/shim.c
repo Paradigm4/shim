@@ -174,7 +174,6 @@ int SAVE_INSTANCE_ID;           // which instance ID should run save commands?
 time_t TIMEOUT;                 // session timeout
 
 int USE_AIO;                    //use accelerated io for some saves: 0/1
-int TMP_SZ_LIMIT;                    //use accelerated io for some saves: 0/1
 
 
 /* copy input string to already-allocated output string, omitting incidences
@@ -1488,6 +1487,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   char var[MAX_VARLEN];
   char buf[MAX_VARLEN];
   char save[MAX_VARLEN];
+  char limit[MAX_VARLEN];
   char SERR[MAX_VARLEN];
   char ID[SESSIONID_LEN];
   int atts_only = 1;
@@ -1613,6 +1613,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_set_lock (&s->lock);
   memset (var, 0, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "save", save, MAX_VARLEN);
+  mg_get_var (ri->query_string, k, "limit", limit, MAX_VARLEN);
 // If save is indicated, modify query
   if (strlen (save) > 0)
     {
@@ -1642,7 +1643,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                     qrybuf, s->obuf, SAVE_INSTANCE_ID,
                     save,
                     atts_only);
-		if (TMP_SZ_LIMIT == -1)
+		if (strcmp(limit, "") == 0)
 		{
 		    snprintf (qry, k + MAX_VARLEN,
 			      "aio_save(%s,'path=%s','instance=%d','format=%s')",
@@ -1652,9 +1653,9 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 		else
 		{
 		    snprintf (qry, k + MAX_VARLEN,
-			      "aio_save(%s,'path=%s','instance=%d','format=%s', 'file_limit=%d')",
+			      "aio_save(%s,'path=%s','instance=%d','format=%s', 'file_limit=%s')",
 			      qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
-			      save, TMP_SZ_LIMIT);
+			      save, limit);
 		}
         }
       else
@@ -1724,7 +1725,6 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
-               syslog (LOG_ERR, "entry 1");
                syslog (LOG_ERR,
                        "execute_query: ERROR execute prefix, %.*s: %s",
                        SESSIONID_SHOW_LEN,
@@ -1957,7 +1957,7 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
         {
         case 'h':
           printf
-            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>] [-a] [-l <temp file limit (MB)]\n");
+            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>] [-a]\n");
           printf
             ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB host is localhost.\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\nBy default the aio_toos plugin is not used.\n");
           printf
@@ -2004,9 +2004,6 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
           break;
         case 'n':
           SCIDB_HOST = optarg;
-          break;
-        case 'l':
-	  TMP_SZ_LIMIT = atoi (optarg);
           break;
 
         default:
@@ -2061,7 +2058,6 @@ main (int argc, char **argv)
   MAX_SESSIONS = DEFAULT_MAX_SESSIONS;
   SAVE_INSTANCE_ID = DEFAULT_SAVE_INSTANCE_ID;
   USE_AIO = 0;
-  TMP_SZ_LIMIT = -1;
 
   parse_args (options, argc, argv, &daemonize);
   if (stat (options[5], &check_ssl) < 0)
