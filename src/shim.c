@@ -1484,8 +1484,8 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   int k;
   ShimQueryID q;
   session *s;
-  char var[MAX_VARLEN];
   char buf[MAX_VARLEN];
+  char var[MAX_VARLEN];
   char save[MAX_VARLEN];
   char limit[MAX_VARLEN];
   char SERR[MAX_VARLEN];
@@ -1638,24 +1638,22 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                 atts_only = atoi (var);
              }
 
-          snprintf (qry, k + MAX_VARLEN,
-                    "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d')",
-                    qrybuf, s->obuf, SAVE_INSTANCE_ID,
-                    save,
-                    atts_only);
 		if (strcmp(limit, "") == 0)
 		{
-		    snprintf (qry, k + MAX_VARLEN,
-			      "aio_save(%s,'path=%s','instance=%d','format=%s')",
-			      qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
-			      save);
+			snprintf (qry, k + MAX_VARLEN,
+				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d')",
+				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
+				  save,
+				  atts_only);
 		}
 		else
 		{
-		    snprintf (qry, k + MAX_VARLEN,
-			      "aio_save(%s,'path=%s','instance=%d','format=%s', 'file_limit=%s')",
-			      qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
-			      save, limit);
+			snprintf (qry, k + MAX_VARLEN,
+				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d', 'file_limit=%s')",
+				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
+				  save,
+				  atts_only,
+				  limit);
 		}
         }
       else
@@ -1792,16 +1790,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               SESSIONID_SHOW_LEN,
               s->sessionid,
               SERR);
-      if (!stream)
-      {
-        respond_to_query_error(conn, s, SERR);
-	if (strstr(SERR, "file size limit") != NULL) {
-		syslog (LOG_ERR,
-			"removing, %s",
-			s->obuf);
-		remove(s->obuf);
-	}
+      respond_to_query_error(conn, s, SERR);
+      if (strstr(SERR, "file size limit") != NULL) {
+	      syslog (LOG_ERR,
+		      "removing, %s",
+		      s->obuf);
+	      remove(s->obuf);
       }
+
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1951,7 +1947,7 @@ void
 parse_args (char **options, int argc, char **argv, int *daemonize)
 {
   int c;
-  while ((c = getopt (argc, argv, "hvfanl:p:r:s:t:m:o:i:")) != -1)
+  while ((c = getopt (argc, argv, "hvfan:p:r:s:t:m:o:i:")) != -1)
     {
       switch (c)
         {
