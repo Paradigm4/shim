@@ -174,6 +174,7 @@ int SAVE_INSTANCE_ID;           // which instance ID should run save commands?
 time_t TIMEOUT;                 // session timeout
 
 int USE_AIO;                    //use accelerated io for some saves: 0/1
+int TMP_SZ_LIMIT;                    //use accelerated io for some saves: 0/1
 
 
 /* copy input string to already-allocated output string, omitting incidences
@@ -1641,6 +1642,20 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                     qrybuf, s->obuf, SAVE_INSTANCE_ID,
                     save,
                     atts_only);
+		if (TMP_SZ_LIMIT == -1)
+		{
+		    snprintf (qry, k + MAX_VARLEN,
+			      "aio_save(%s,'path=%s','instance=%d','format=%s')",
+			      qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
+			      save);
+		}
+		else
+		{
+		    snprintf (qry, k + MAX_VARLEN,
+			      "aio_save(%s,'path=%s','instance=%d','format=%s', 'file_limit=%d')",
+			      qrybuf, stream ? s->opipe : s->obuf, SAVE_INSTANCE_ID,
+			      save, TMP_SZ_LIMIT);
+		}
         }
       else
         {
@@ -1709,12 +1724,19 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
+               syslog (LOG_ERR, "entry 1");
                syslog (LOG_ERR,
                        "execute_query: ERROR execute prefix, %.*s: %s",
                        SESSIONID_SHOW_LEN,
                        s->sessionid,
                        SERR);
                respond_to_query_error(conn, s, SERR);
+	       if (strstr(SERR, "file size limit") != NULL) {
+		       syslog (LOG_ERR,
+			       "removing, %s",
+			       s->obuf);
+		       remove(s->obuf);
+	       }
                omp_unset_lock (&s->lock);
                return;
             }
@@ -1770,7 +1792,16 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               SESSIONID_SHOW_LEN,
               s->sessionid,
               SERR);
-      respond_to_query_error(conn, s, SERR);
+      if (!stream)
+      {
+        respond_to_query_error(conn, s, SERR);
+	if (strstr(SERR, "file size limit") != NULL) {
+		syslog (LOG_ERR,
+			"removing, %s",
+			s->obuf);
+		remove(s->obuf);
+	}
+      }
       omp_unset_lock (&s->lock);
       return;
     }
@@ -1920,13 +1951,13 @@ void
 parse_args (char **options, int argc, char **argv, int *daemonize)
 {
   int c;
-  while ((c = getopt (argc, argv, "hvfan:p:r:s:t:m:o:i:")) != -1)
+  while ((c = getopt (argc, argv, "hvfanl:p:r:s:t:m:o:i:")) != -1)
     {
       switch (c)
         {
         case 'h':
           printf
-            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>] [-a]\n");
+            ("Usage:\nshim [-h] [-v] [-f] [-p <http port>] [-r <document root>] [-n <scidb host>] [-s <scidb port>] [-t <tmp I/O DIR>] [-m <max concurrent sessions] [-o <http session timeout>] [-i <instance id for save>] [-a] [-l <temp file limit (MB)]\n");
           printf
             ("The -v option prints the version build ID and exits.\nSpecify -f to run in the foreground.\nDefault http ports are 8080 and 8083(SSL).\nDefault SciDB host is localhost.\nDefault SciDB port is 1239.\nDefault document root is /var/lib/shim/wwwroot.\nDefault temporary I/O directory is /tmp.\nDefault max concurrent sessions is 50 (max 100).\nDefault http session timeout is 60s and min is 60 (see API doc).\nDefault instance id for save to file is 0.\nBy default the aio_toos plugin is not used.\n");
           printf
@@ -1973,6 +2004,9 @@ parse_args (char **options, int argc, char **argv, int *daemonize)
           break;
         case 'n':
           SCIDB_HOST = optarg;
+          break;
+        case 'l':
+	  TMP_SZ_LIMIT = atoi (optarg);
           break;
 
         default:
@@ -2027,6 +2061,7 @@ main (int argc, char **argv)
   MAX_SESSIONS = DEFAULT_MAX_SESSIONS;
   SAVE_INSTANCE_ID = DEFAULT_SAVE_INSTANCE_ID;
   USE_AIO = 0;
+  TMP_SZ_LIMIT = -1;
 
   parse_args (options, argc, argv, &daemonize);
   if (stat (options[5], &check_ssl) < 0)
