@@ -1,7 +1,8 @@
 ---
-author: "<div style='font-size: 0.7em'>B. W. Lewis <blewis@paradigm4.com></div>"
-date: "<div style='font-size: 0.7em'>2/1/2018</div>"
 title: 'shim: A Simple HTTP Service for SciDB'
+author: '<div style=''font-size: 0.7em''>B. W. Lewis <blewis@paradigm4.com> and Rares
+  Vernica <rvernica@gmail.com></div>'
+date: '<div style=''font-size: 0.7em''>12/22/2018</div>'
 output:
   html_document:
     css: shimstyle.css
@@ -138,9 +139,10 @@ After sessions time out their resources are not freed unless the need to be to s
 lazy timeout section below. Active sessions that are waiting on SciDB query results or transferring data are not subject
 to timeout and may run indefinitely.
 
-## AIO plugin
 
-Set `aio=1` in the config file to enable fast AIO save using the SciDB aio_tools plugin.
+## accelerated_io_tools (AIO) plugin
+
+Set `aio=1` in the config file to enable fast save using the SciDB `accelerated_io_tools` (AIO) plugin.
 
 
 ## TLS/SSL Certificate
@@ -321,6 +323,7 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 - **query** AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters
 - **save** _optional_ SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by `read_lines` or `read_bytes`. If the save parameter is not specified, don't save the query output.
 - **atts_only** _optional_ specify whether the output should only include attribute values or include attribute as well as dimension values. Possible values are 0 and 1 (default). If atts_only=0 is specified the dimension values are appended for each cell after the attribute values. The type used for the dimension values is int64. This setting is only applicable when `save` with either binary or _arrow_ format is used. For the binary format, the format specification has to include an `int64` type specifications (appended at the end) for each of the input array dimensions.
+- **limit** _optional_ absolute limit of the output file in Megabytes. Effective only if the `accelerated_io_tools` (AIO) plugin is enabled. If not sepcified, the default value of `aio_save` is used.
 - **prefix** _optional_ semi-colon separated URL encoded AFL statements to precede **query** in the same SciDB connection context. Mainly used for SciDB namespace and role setting.
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and SciDB query ID in text/plain payload
