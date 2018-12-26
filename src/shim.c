@@ -1487,7 +1487,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   char buf[MAX_VARLEN];
   char var[MAX_VARLEN];
   char save[MAX_VARLEN];
-  char limit[MAX_VARLEN];
+  char result_size_limit[MAX_VARLEN];
   char SERR[MAX_VARLEN];
   char ID[SESSIONID_LEN];
   int atts_only = 1;
@@ -1613,7 +1613,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   omp_set_lock (&s->lock);
   memset (var, 0, MAX_VARLEN);
   mg_get_var (ri->query_string, k, "save", save, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "limit", limit, MAX_VARLEN);
+  mg_get_var (ri->query_string, k, "result_size_limit", result_size_limit, MAX_VARLEN);
 // If save is indicated, modify query
   if (strlen (save) > 0)
     {
@@ -1638,7 +1638,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                 atts_only = atoi (var);
              }
 
-		if (strcmp(limit, "") == 0)
+		if (strcmp(result_size_limit, "") == 0)
 		{
 			snprintf (qry, k + MAX_VARLEN,
 				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d')",
@@ -1649,11 +1649,11 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 		else
 		{
 			snprintf (qry, k + MAX_VARLEN,
-				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d', 'file_limit=%s')",
+				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d', 'result_size_limit=%s')",
 				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
 				  save,
 				  atts_only,
-				  limit);
+				  result_size_limit);
 		}
         }
       else
@@ -1729,7 +1729,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                        s->sessionid,
                        SERR);
                respond_to_query_error(conn, s, SERR);
-	       if (strstr(SERR, "file size limit") != NULL) {
+	       if (strstr(SERR, "result size limit") != NULL) {
 		       syslog (LOG_ERR,
 			       "removing, %s",
 			       s->obuf);
@@ -1791,7 +1791,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
               s->sessionid,
               SERR);
       respond_to_query_error(conn, s, SERR);
-      if (strstr(SERR, "file size limit") != NULL) {
+      if (strstr(SERR, "result size limit") != NULL) {
 	      syslog (LOG_ERR,
 		      "removing, %s",
 		      s->obuf);

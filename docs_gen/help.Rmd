@@ -323,7 +323,7 @@ curl -s "http://localhost:8080/release_session?id=${s}"
 - **query** AFL query string, encoded for use in URL as required, limited to a maximum of 262,144 characters
 - **save** _optional_ SciDB save format string, limited to a maximum of 4096 characters; Save the query output in the specified format for subsequent download by `read_lines` or `read_bytes`. If the save parameter is not specified, don't save the query output.
 - **atts_only** _optional_ specify whether the output should only include attribute values or include attribute as well as dimension values. Possible values are 0 and 1 (default). If atts_only=0 is specified the dimension values are appended for each cell after the attribute values. The type used for the dimension values is int64. This setting is only applicable when `save` with either binary or _arrow_ format is used. For the binary format, the format specification has to include an `int64` type specifications (appended at the end) for each of the input array dimensions.
-- **limit** _optional_ absolute limit of the output file in Megabytes. Effective only if the `accelerated_io_tools` (AIO) plugin is enabled. If not sepcified, the default value of `aio_save` is used.
+- **result_size_limit** _optional_ absolute limit of the output file in Megabytes. Effective only if the `accelerated_io_tools` (AIO) plugin is enabled. If not sepcified, the default value of `aio_save` is used.
 - **prefix** _optional_ semi-colon separated URL encoded AFL statements to precede **query** in the same SciDB connection context. Mainly used for SciDB namespace and role setting.
 <tr><td>RESPONSE <td>
 - Success: HTTP 200 and SciDB query ID in text/plain payload
