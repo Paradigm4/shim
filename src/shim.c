@@ -1641,7 +1641,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 		if (strcmp(limit, "") == 0)
 		{
 			snprintf (qry, k + MAX_VARLEN,
-				  "aio_save(%s,paths:('%s')',instance:(%d)',format:'%s',atts_only:%d')",
+				  "aio_save(%s,paths:('%s')',instance:(%d),format:'%s',atts_only:%d')",
 				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
 				  save,
 				  atts_only);
