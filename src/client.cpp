@@ -54,7 +54,7 @@ extern "C" void * scidbconnect(
     int* status)
 {
   void* conn = NULL;
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   try
   {
       scidb::SessionProperties props;
@@ -105,7 +105,7 @@ extern "C" void * scidbconnect(
  */
 extern "C" void scidbdisconnect(void * con)
 {
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   try{
     db.disconnect((void *)con);
   } catch(std::exception& e)
@@ -125,7 +125,7 @@ extern "C" unsigned long long
 executeQuery(void *con, char *query, int afl, char *err)
 {
   unsigned long long id = 0;
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   const string &queryString = (const char *)query;
   scidb::QueryResult queryResult;
   try{
@@ -154,7 +154,7 @@ prepare_query(void *result, void *con, char *query, int afl, char *err)
 {
   struct prep *p;
   unsigned long long id = -1;
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   const string &queryString = (const char *)query;
   scidb::QueryResult *q = new scidb::QueryResult();
   if(!q)
@@ -191,7 +191,7 @@ execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *e
 {
   ShimQueryID qid;
   const string &queryString = (const char *)query;
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   qid.queryid = 0;
   qid.coordinatorid = 0;
   scidb::QueryResult *q = (scidb::QueryResult *)pq->queryresult;
@@ -220,7 +220,7 @@ execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *e
  */
 extern "C" void completeQuery(ShimQueryID qid, void *con, char *err)
 {
-  scidb::SciDB& db = scidb::getSciDB();
+  scidb::SciDBClient& db = scidb::getSciDB();
   scidb::QueryID q = scidb::QueryID(qid.coordinatorid, qid.queryid);
   try{
     db.completeQuery(q, (void *)con);
