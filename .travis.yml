@@ -28,6 +28,9 @@ before_install:
     rvernica/scidb:${SCIDB_VER}-ext
   - while ! curl http://localhost:8080/version; do sleep 1; done
   - docker exec scidb service shimsvc stop
+  - docker exec scidb sed --in-place
+    "\#deb http://deb.debian.org/debian jessie-updates main#d"
+    /etc/apt/sources.list
 
 install:
   - docker exec scidb apt-get update
