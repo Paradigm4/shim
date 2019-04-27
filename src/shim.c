@@ -1486,13 +1486,12 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   session *s;
   char buf[MAX_VARLEN];
   char var[MAX_VARLEN];
-  char save[MAX_VARLEN];
   char result_size_limit[MAX_VARLEN];
   char SERR[MAX_VARLEN];
   char ID[SESSIONID_LEN];
   int atts_only = 1;
 
-  char *qrybuf, *qry, *prefix;
+  char *qrybuf, *qry, *prefix, *save;
   struct prep pq;               // prepared query storage
 
   if (!ri->query_string)
@@ -1612,7 +1611,27 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   omp_set_lock (&s->lock);
   memset (var, 0, MAX_VARLEN);
-  mg_get_var (ri->query_string, k, "save", save, MAX_VARLEN);
+  save = (char*) malloc (k);
+  if (!save)
+    {
+      free (qrybuf);
+      free (qry);
+      free (prefix);
+      syslog (LOG_ERR,
+              "execute_query[%.*s]: ERROR %s",
+              SESSIONID_SHOW_LEN,
+              s->sessionid,
+              MSG_ERR_HTTP_500_OOM);
+      respond (conn,
+               plain,
+               HTTP_500_SERVER_ERROR,
+               strlen (MSG_ERR_HTTP_500_OOM),
+               MSG_ERR_HTTP_500_OOM);
+      omp_set_lock (&s->lock);
+      cleanup_session (s);
+      omp_unset_lock (&s->lock);
+    }
+  mg_get_var (ri->query_string, k, "save", save, k);
   mg_get_var (ri->query_string, k, "result_size_limit", result_size_limit, MAX_VARLEN);
 // If save is indicated, modify query
   if (strlen (save) > 0)
@@ -1703,6 +1722,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
+               free (save);
                syslog (LOG_ERR,
                        "execute_query: ERROR prepare prefix, %.*s: %s",
                        SESSIONID_SHOW_LEN,
@@ -1723,6 +1743,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
                free (qry);
                free (qrybuf);
                free (prefix);
+               free (save);
                syslog (LOG_ERR,
                        "execute_query: ERROR execute prefix, %.*s: %s",
                        SESSIONID_SHOW_LEN,
@@ -1753,6 +1774,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qry);
       free (qrybuf);
       free (prefix);
+      free (save);
       syslog (LOG_ERR,
               "execute_query: ERROR prepare, %.*s: %s",
               SESSIONID_SHOW_LEN,
@@ -1785,6 +1807,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       free (qry);
       free (qrybuf);
       free (prefix);
+      free (save);
       syslog (LOG_ERR,
               "execute_query: ERROR execute, %.*s: %s",
               SESSIONID_SHOW_LEN,
@@ -1809,6 +1832,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   free (qry);
   free (qrybuf);
   free (prefix);
+  free (save);
   syslog (LOG_INFO,
           "execute_query[%.*s]: done",
           SESSIONID_SHOW_LEN,

@@ -267,5 +267,10 @@ res=$($CURL $NO_OUT "$SHIM_URL/release_session?id=$ID")
 test "$res" == "200"
 
 
+## Extra
+READ_MAX=250
+source `dirname "${BASH_SOURCE[0]}"`/read-long.sh
+
+
 echo "PASS"
 exit 0

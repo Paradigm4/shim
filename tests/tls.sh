@@ -56,5 +56,9 @@ res=$($CURL "$SHIM_URL/release_session?id=$ID")
 test "$res" == "200"
 
 
+## Extra
+source `dirname "${BASH_SOURCE[0]}"`/read-long.sh
+
+
 echo "PASS"
 exit 0
