@@ -1602,14 +1602,14 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
+      return;
     }
   mg_get_var (ri->query_string, k, "prefix", prefix, k);
   if (strlen (prefix) == 0)
     {
-      free(prefix);
+      free (prefix);
       prefix = 0;
     }
-  omp_set_lock (&s->lock);
   memset (var, 0, MAX_VARLEN);
   save = (char*) malloc (k);
   if (!save)
@@ -1630,11 +1630,18 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       omp_set_lock (&s->lock);
       cleanup_session (s);
       omp_unset_lock (&s->lock);
+      return;
     }
   mg_get_var (ri->query_string, k, "save", save, k);
+  if (strlen (save) == 0)
+    {
+      free (save);
+      save = NULL;
+    }
   mg_get_var (ri->query_string, k, "result_size_limit", result_size_limit, MAX_VARLEN);
+  omp_set_lock (&s->lock);
 // If save is indicated, modify query
-  if (strlen (save) > 0)
+  if (save != NULL && strlen (save) > 0)
     {
       if (save[0] == '('
           || strcmp (save, "arrow") == 0)
