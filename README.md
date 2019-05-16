@@ -16,10 +16,7 @@ This is the fastest/easiest way to install shim as a system service. We provide 
 
 **SciDB on Ubuntu 14.04**
 
-*  [Shim for SciDB 18.1](https://github.com/Paradigm4/shim/raw/gh-pages/shim_18.1_amd64.deb)
-*  [Shim for SciDB 16.9](https://github.com/Paradigm4/shim/raw/gh-pages/shim_16.9_amd64.deb)
-*  [Shim for SciDB 15.12](https://github.com/Paradigm4/shim/raw/gh-pages/shim_15.12_amd64.deb)
-*  [Shim for SciDB 15.7](http://paradigm4.github.io/shim/ubuntu_14.04_shim_15.7_amd64.deb)
+[Donwload](http://paradigm4.github.io/shim/#ubuntu)
 
 ```sh
 # Install with:
@@ -31,12 +28,7 @@ apt-get remove shim
 
 **SciDB on RHEL/Centos 6**
 
-* [Shim for SciDB 18.1](http://paradigm4.github.io/shim/shim-18.1-1.x86_64.rpm)
-* [Shim for SciDB 16.9](http://paradigm4.github.io/shim/shim-16.9-1.x86_64.rpm)
-* [Shim for SciDB 15.12](http://paradigm4.github.io/shim/shim-15.12-1.x86_64.rpm)
-* [Shim for SciDB 15.7](http://paradigm4.github.io/shim/shim-15.7-1.x86_64.rpm)
-
-Packages for some older versions can be found at https://github.com/paradigm4/shim/tree/gh-pages
+[Downloads](http://paradigm4.github.io/shim/#red-hat-enterprise-linus-and-centos)
 
 ```sh
 # shim depends on a few libraries. If installation fails you may need to:
