@@ -7,7 +7,7 @@ language: python
 python:
   - "3.6"
 
-env: SCIDB_VER=18.1
+env: SCIDB_VER=19.3
 
 services:
   - docker
