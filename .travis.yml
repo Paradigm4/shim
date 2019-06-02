@@ -17,7 +17,7 @@ before_install:
   # - wget --no-verbose --output-document -
   #   https://github.com/Paradigm4/accelerated_io_tools/archive/master.tar.gz
   #   | tar --extract --gzip --directory=.
-  - docker pull rvernica/scidb:${SCIDB_VER}-ext
+  - docker pull rvernica/scidb:${SCIDB_VER} #-ext
   - docker run
     --name scidb
     --detach
