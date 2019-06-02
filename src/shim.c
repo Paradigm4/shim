@@ -1667,7 +1667,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 		if (strcmp(result_size_limit, "") == 0)
 		{
 			snprintf (qry, k + MAX_VARLEN,
-				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d')",
+				  "aio_save(%s,paths:('%s'),instances:(%d),format:'%s',atts_only:%d)",
 				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
 				  save,
 				  atts_only);
@@ -1675,7 +1675,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
 		else
 		{
 			snprintf (qry, k + MAX_VARLEN,
-				  "aio_save(%s,'path=%s','instance=%d','format=%s','atts_only=%d', 'result_size_limit=%s')",
+				  "aio_save(%s,paths:('%s'),instances:(%d),format:'%s',atts_only:%d, result_size_limit:%s)",
 				  qrybuf, s->obuf, SAVE_INSTANCE_ID,
 				  save,
 				  atts_only,

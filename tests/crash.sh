@@ -47,5 +47,5 @@ test "$res" == "502"
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()")
 test "$res" == "404"
 
-scidb.py stopall $SCIDB_NAME
-scidb.py startall $SCIDB_NAME
+scidbctl.py stop $SCIDB_NAME
+scidbctl.py start $SCIDB_NAME
