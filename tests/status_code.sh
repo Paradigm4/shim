@@ -215,7 +215,7 @@ test "$res" == "200"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID&n=10")
 test "$res" == "$err"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/read_bytes?id=$ID&n=10")
@@ -229,7 +229,7 @@ res=$($CURL "$SHIM_URL/read_bytes?id=$ID")
 test "$res" == "$err"
 
 err="Output not saved in text format416"
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
