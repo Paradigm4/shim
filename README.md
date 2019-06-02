@@ -1,3 +1,8 @@
+# shim
+
+[![SciDB 19.3](https://img.shields.io/badge/SciDB-19.3-blue.svg)](https://forum.paradigm4.com/t/scidb-release-19-3/2359)
+[![Build Status](https://travis-ci.org/Paradigm4/shim.svg)](https://travis-ci.org/Paradigm4/shim)
+
 Shim is a super-basic SciDB client that exposes limited SciDB functionality
 through a simple HTTP API. It's based on the mongoose web server.  It's a shim
 between the low-level SciDB C API and a higher-level and lightweight web
