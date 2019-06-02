@@ -43,6 +43,7 @@ install:
     busybox-syslogd
     curl
     gcc
+    libpcre3-dev
   #   libarrow-dev
 
   # - docker exec scidb make --directory=/shim/accelerated_io_tools-master
