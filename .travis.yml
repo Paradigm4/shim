@@ -25,7 +25,7 @@ before_install:
     --tmpfs /dev/shm
     --volume `pwd`:/shim
     --publish 8080:8080
-    rvernica/scidb:${SCIDB_VER}-ext
+    rvernica/scidb:${SCIDB_VER} #-ext
   - while ! curl http://localhost:8080/version; do sleep 1; done
   - docker exec scidb service shimsvc stop
 
