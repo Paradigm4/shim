@@ -42,6 +42,7 @@ install:
     --no-install-recommends
     busybox-syslogd
     curl
+    gcc
   #   libarrow-dev
 
   # - docker exec scidb make --directory=/shim/accelerated_io_tools-master
