@@ -13,12 +13,10 @@ services:
   - docker
 
 before_install:
-  # - mkdir accelerated_io_tools
   # - wget --no-verbose --output-document -
   #   https://github.com/Paradigm4/accelerated_io_tools/archive/master.tar.gz
   #   | tar --extract --gzip --directory=.
 
-  - mkdir superfunpack
   - wget --no-verbose --output-document -
     https://github.com/Paradigm4/superfunpack/archive/master.tar.gz
     | tar --extract --gzip --directory=.
