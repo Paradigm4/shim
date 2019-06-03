@@ -66,7 +66,7 @@ install:
   - docker exec scidb ln --symbolic
     /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
   - docker exec scidb make --directory /shim install
-  - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
+  # - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
   - pip install --upgrade -r tests/pytest/requirements.txt
 
 script:
