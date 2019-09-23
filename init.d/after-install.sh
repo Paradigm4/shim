@@ -44,11 +44,15 @@ if test $? -ne 0; then
   echo "SSL certificate generation failed openssl not found: TLS disabled."
   rm -f /var/lib/shim/ssl_cert.pem
 fi
-if test -n "$(which update-rc.d 2>/dev/null)"; then
+if test -n "$(which systemctl 2>/dev/null)"; then
+# SystemD
+  find /opt/scidb/ -name shim_systemd -exec {} \;
+elif test -n "$(which update-rc.d 2>/dev/null)"; then
 # Ubuntu
   update-rc.d shimsvc defaults
-elif test -n "$(which chkconfig)"; then
-# RHEL
+  /etc/init.d/shimsvc start
+elif test -n "$(which chkconfig 2>/dev/null)"; then
+# RHEL sysV
   chkconfig --add shimsvc && chkconfig shimsvc on
+  /etc/init.d/shimsvc start
 fi
-/etc/init.d/shimsvc start
