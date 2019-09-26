@@ -42,7 +42,7 @@ help:
 install: shim
 	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop; fi
-	if test -n "$$(which systemctl 2>/dev/null)"; then systemctl stop shim; fi
+	if test -n "$$(which systemctl 2>/dev/null)"; then systemctl stop shim || true; fi
 	mkdir -p "$(DESTDIR)$(SCIDB)/bin"
 	cp shim "$(DESTDIR)/$(SCIDB)/bin"
 	mkdir -p "$(DESTDIR)/var/lib/shim"
