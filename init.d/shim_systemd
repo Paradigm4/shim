@@ -66,19 +66,19 @@ if [ -f $SERVICE_FILE -a $SERVICE_FILE -nt $SHIM_CONF ]; then
 fi
 # Must be run as root
 if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root" 
+    echo "This script must be run as root"
     exit 1
 fi
 # Using the init.d script "shimsvc" get the line that would be used
 # with init.d to start the service.
 SHIMSVC_RESULTS="$($SHIMSVC_FILE test)"
-# Now parse the line extracting the ExecStart= command and the User= 
+# Now parse the line extracting the ExecStart= command and the User=
 #   The line is of the form:
 #   Command line su scidb -c "'/opt/scidb/18.1/bin/shim' -s 1239 -t /home/scidb/scidb_data/0/0 -i 0 -a"
 #
 USER=$(echo $SHIMSVC_RESULTS | awk '{print $4}')
 EXEC_START="$(echo $SHIMSVC_RESULTS | awk -F\" '{print $2}' | sed "s/'//g")"
-# 
+#
 # Stop the service
 #   ignore any bad things (like service not running or service not there)
 systemctl -q stop shim 2>/dev/null || true
