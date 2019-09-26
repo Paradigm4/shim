@@ -72,7 +72,7 @@ help:
 	@echo
 	@echo "make install   (install program and files)"
 	@echo "make uninstall (remove program and files)"
-	@echo "make service   (install a Debian or RHEL init.d-style service, shimsvc)"
+	@echo "make service   (install a Debian or RHEL shim service)"
 	@echo "make unservice (terminate and remove installed service)"
 	@echo "make deb-pkg   (create a binary Ubuntu/Debian package, requires fpm)"
 	@echo "make rpm-pkg   (create a binary RHEL package, requires fpm)"
@@ -84,6 +84,7 @@ help:
 install: shim
 	@if test ! -d "$(SCIDB)"; then echo  "Can't find scidb. Maybe try explicitly setting SCIDB variable, for example::\n\nmake SCIDB=/opt/scidb/13.3 install"; exit 1; fi
 	@if test -x /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop;fi
+	@if test -n "$$(which systemctl 2>/dev/null)"; then systemctl stop shim; fi
 	mkdir -p "$(DESTDIR)$(SCIDB)/bin"
 	cp shim "$(DESTDIR)/$(SCIDB)/bin"
 	mkdir -p "$(DESTDIR)/var/lib/shim"
@@ -99,17 +100,14 @@ uninstall: unservice
 	rm -f /usr/local/share/man/man1/shim.1
 
 service: install
-	cp init.d/shimsvc /etc/init.d
-	chmod 0755 /etc/init.d/shimsvc
-	@if test -n "$$(which update-rc.d 2>/dev/null)"; then update-rc.d shimsvc defaults;fi
-	@if test -n "$$(which chkconfig 2>/dev/null)"; then chkconfig --add shimsvc && chkconfig shimsvc on;fi
-	/etc/init.d/shimsvc start
+	@if test -n "$$(which systemctl 2>/dev/null)"; then find $(SCIDB) -name shim_systemd -exec {} \; fi
+	@if test -n "$$(which update-rc.d 2>/dev/null)"; then chmod 0755 /etc/init.d/shimsvc; update-rc.d shimsvc defaults; /etc/init.d/shimsvc start; fi
+	@if test -n "$$(which chkconfig 2>/dev/null)"; then chmod 0755 /etc/init.d/shimsvc; chkconfig --add shimsvc; chkconfig shimsvc on; fi
 
 unservice:
-	@if test -f /etc/init.d/shimsvc; then /etc/init.d/shimsvc stop; fi
-	- @if test -n "$$(which update-rc.d 2>/dev/null)"; then sudo update-rc.d -f shimsvc remove;fi
-	- @if test -n "$$(which chkconfig 2>/dev/null)"; then chkconfig --del shimsvc;fi
-	rm -rf /etc/init.d/shimsvc
+	@if test -n "$$(which systemctl 2>/dev/null)"; then systemctl stop shim; systemctl disable shim; rm -f /usr/lib/systemd/system/shim.service; systemctl daemon-reload; fi
+	@if test -n "$$(which update-rc.d 2>/dev/null)"; then update-rc.d -f shimsvc remove; /etc/init.d/shimsvc stop; rm -rf /etc/init.d/shimsvc; fi
+	@if test -n "$$(which chkconfig 2>/dev/null)"; then chkconfig --del shimsvc; chkconfig shimsvc off; rm -rf /etc/init.d/shimsvc; fi
 
 deb-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi

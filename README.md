@@ -54,7 +54,7 @@ $ sudo ln -s ~/scidb/lib /opt/scidb/18.1/lib
 $ sudo service shimsvc start
 Starting shim
 ```
-You could also edit /etc/init.d/shimsvc or use other environment/path tricks.
+You could also edit /etc/init.d/shimsvc or /usr/lib/systemd/system/shim.service, or use other environment/path tricks.
 
 ## Configuring  shim
 
@@ -90,7 +90,7 @@ is running under.
 * `timeout` Timeout after which an inactive HTTP session may be declared dead and reclaimed for use elsewhere.
 * `instance` Which SciDB instance should save data to files or pipes? This instance must have write permission to the `tmp` directory.
 
-Restart shim to effect option changes with `/etc/init.d/shimsvc restart`.
+Restart shim to effect option changes with either `/etc/init.d/shimsvc restart` or `/opt/scidb/18.1/systemd/shim_systemd`, whichever is appropriate.
 
 ## Note on the SSL Key Certificate Configuration
 
@@ -116,10 +116,15 @@ shim [-h] [-f] [-p <http port>] [-r <document root>] [-s <scidb port>]
 ```
 where, -f means run in the foreground (defaults to background), -h means help.
 
-If you installed the service version, then you can control when shim is running with the usual mechanism, for example:
+If you installed the service version, then you can control when shim is running with the appropriate mechanism, for example:
 ```
 /etc/init.d/shimsvc stop
 /etc/init.d/shimsvc start
+
+or
+
+systemctl shim stop
+systemctl shim start
 ```
 
 ## Uninstall
