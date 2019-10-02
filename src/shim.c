@@ -908,7 +908,18 @@ new_session (struct mg_connection *conn, const struct mg_request_info *ri)
                            strlen (MSG_ERR_HTTP_502),
                            MSG_ERR_HTTP_502);
                 }
+
+	      // If the connection to SciDB failed for index 1,
+	      // then cleanup the successful connection made on
+	      // index 0, if it exists (which it should at this
+	      // point, but be paranoid).
+	      if (i > 0 && s->scidb[0]) {
+		scidbdisconnect (s->scidb[0]);
+	      }
+
+	      // Cleanup session memory after the disconnect.
               cleanup_session (s);
+
               return;
             }
         }
