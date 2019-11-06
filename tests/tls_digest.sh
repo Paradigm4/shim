@@ -2,9 +2,17 @@
 
 HOST=localhost
 PORT=8089
+SHIM_DIR=/tmp/shim
+MYDIR=$(dirname $0)
+
+# Get shim's absolute location
+# This assumes it is one directory up from this script
+pushd $MYDIR/../ > /dev/null 2>&1
+SHIM=$(pwd)/shim
+popd > /dev/null 2>&1
+
 HTTP_AUTH=homer:elmo
 
-SHIM_DIR=$(mktemp --directory)
 CURL="curl --insecure --digest --user $HTTP_AUTH --write-out %{http_code} --silent"
 NO_OUT="--output /dev/null"
 SHIM_URL="https://$HOST:$PORT"
@@ -14,6 +22,7 @@ set -o errexit
 function cleanup {
     ## Cleanup
     kill -s SIGKILL %1
+    wait %1 2>/dev/null || true
     rm --recursive $SHIM_DIR
 }
 
@@ -33,7 +42,7 @@ openssl req                                                     \
     -keyout $SHIM_DIR/ssl_cert.pem                              \
 2> /dev/null                                                    \
 >> $SHIM_DIR/ssl_cert.pem
-./shim -p ${PORT}s -r $SHIM_DIR/wwwroot -f &
+$SHIM -c $MYDIR/conf -f start 2>/dev/null &
 sleep 1
 
 

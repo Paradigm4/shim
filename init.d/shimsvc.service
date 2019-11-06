@@ -1,0 +1,15 @@
+[Unit]
+Description=SciDB shim server
+After=syslog.target
+After=network.target
+After=nss-user-lookup.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=forking
+Restart=on-failure
+Environment=LD_LIBRARY_PATH=/opt/scidb/XXX_SCIDB_VER_XXX/lib:/opt/scidb/XXX_SCIDB_VER_XXX/3rdparty/boost/lib
+ExecStart=/opt/scidb/XXX_SCIDB_VER_XXX/bin/shim start
+PIDFile=/run/shim.pid

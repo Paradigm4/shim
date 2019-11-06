@@ -71,7 +71,7 @@ install:
 
 script:
   - docker exec scidb make --directory /shim test
-  - docker exec scidb /shim/shim
+  - docker exec scidb /shim/shim start
   - pytest tests/pytest/test_sessions.py
   - pytest -n 10 tests/pytest/test_sessions_multi.py
 

@@ -1,0 +1,5 @@
+This code was taken from https://github.com/ndevilla/iniparser.git
+
+The LICENSE file was added to the top of all 4 src files.
+The README.md file was modified to have the github repository URL at the top.
+The Makefile was modified to only build the static library.

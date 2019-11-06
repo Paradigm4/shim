@@ -1,17 +1,25 @@
 #!/bin/bash
 host=localhost
 port=8088
-td=$(mktemp -d)
+SHIM_DIR=/tmp/shim
+MYDIR=$(dirname $0)
+
+# Get shim's absolute location
+# This assumes it is one directory up from this script
+pushd $MYDIR/../ > /dev/null 2>&1
+SHIM=$(pwd)/shim
+popd > /dev/null 2>&1
 
 function fail {
   echo "FAIL"
-  rm -rf $td
-  kill -9 %1
+  kill -s SIGKILL %1
+  wait %1 2>/dev/null || true
+  rm --recursive $SHIM_DIR
   exit 1
 }
 
-mkdir -p $td/wwwroot
-./shim -p $port -r $td/wwwroot  -f  2>/dev/null &
+mkdir -p $SHIM_DIR/wwwroot
+$SHIM -c $MYDIR/conf -f start 2>/dev/null &
 sleep 1
 
 id=$(curl -s "http://${host}:${port}/new_session" | tr -d '[\r\n]')
@@ -22,7 +30,9 @@ while test $x -lt 40;do
   x=$(($x + 1))
 done
 curl -f -s "http://${host}:${port}/release_session?id=${id}" >/dev/null  || fail
-echo "OK"
 
-rm -rf $td
-kill -9 %1 >/dev/null 2>&1
+echo "PASS"
+kill -s SIGKILL %1
+wait %1 2>/dev/null || true
+rm --recursive $SHIM_DIR
+exit 0

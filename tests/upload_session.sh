@@ -3,7 +3,15 @@
 
 host=localhost
 port=8088
-td=$(mktemp -d)
+SHIM_DIR=/tmp/shim
+MYDIR=$(dirname $0)
+
+# Get shim's absolute location
+# This assumes it is one directory up from this script
+pushd $MYDIR/../ > /dev/null 2>&1
+SHIM=$(pwd)/shim
+popd > /dev/null 2>&1
+
 bs=10M
 count=5
 credentials=homer:elmo
@@ -19,18 +27,19 @@ curl_url="http://${host}:${port}"
 
 function fail {
   echo "FAIL"
-  rm -rf $td
-  kill -9 %1
+  kill -s SIGKILL %1
+  wait %1 2>/dev/null || true
+  rm --recursive $SHIM_DIR
   exit 1
 }
 
 
-mkdir -p $td/wwwroot
+mkdir -p $SHIM_DIR/wwwroot
 if [ ! -z ${credentials+x} ]
 then
-    echo "$credentials" > $td/wwwroot/.htpasswd
+    echo "$credentials" > $SHIM_DIR/wwwroot/.htpasswd
 fi
-./shim -t /dev/shm -p $port -r $td/wwwroot -f &
+$SHIM -c $MYDIR/conf -f start 2>/dev/null &
 sleep 1
 
 
@@ -73,6 +82,9 @@ test "$u1" -eq "$u2" || fail
 
 curl -f -s $curl_auth "$curl_url/release_session?id=${id}" >/dev/null || fail
 x=$(echo "${bs%?} * $count / ($t2 - $t1)" | bc)
-echo "OK (about ${x} MB/s)"
-rm -rf $td
-kill -9 %1 >/dev/null 2>&1
+
+echo "PASS (about ${x} MB/s)"
+kill -s SIGKILL %1
+wait %1 2>/dev/null || true
+rm --recursive $SHIM_DIR
+exit 0

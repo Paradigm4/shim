@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+### BEGIN INIT INFO
+# Provides:          shimsvc
+# Required-Start:    $syslog $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: shim
+# Description:       A simple SciDB web service.
+### END INIT INFO
+
+SCIDB_VER=XXX_SCIDB_VER_XXX
+SCIDB_DIR=/opt/scidb/${SCIDB_VER}
+
+export LD_LIBRARY_PATH="${SCIDB_DIR}/lib:${SCIDB_DIR}/3rdparty/boost/lib"
+export SHIM="${SCIDB_DIR}/bin/shim"
+
+case $1 in
+        test)
+            ${SHIM} test
+            ;;
+        start)
+            ${SHIM} start
+            ;;
+        restart)
+            ${SHIM} restart
+            ;;
+        status)
+            ${SHIM} status
+            ;;
+        stop)
+            echo "Stopping shim"
+            ${SHIM} stop
+            ;;
+esac

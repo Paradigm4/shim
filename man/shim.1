@@ -3,57 +3,35 @@
 shim \- A basic HTTP service for SciDB.
 .SH SYNOPSIS
 .B shim
-[\-h] [\-f] [\-n \fIPAM_service_name\fR] [\-p \fIhttpport\fR] [\-r \fIdocumentroot\fR] [\-s \fIscidbport\fR] [\-t \fItmpdir\fR] [\-i \fIinstance_id\fR] [\-m \fImax_sessions\fR] [\-o \fItimeout\fR]
+[\-h] [\-f] [\-v] [\-c \fIconfiguration_file\fR] [\-p \fIpid_file\fR]
 .SH DESCRIPTION
 Shim is a super-basic SciDB client that exposes SciDB queries
 through a simple HTTP API.
 .TP
 Shim can run on any computer that's running a SciDB coordinator instance.
 .TP
-Start shim and navigate to http://localhost:8080/api.html for detailed help on the API.
+Start shim and navigate to http://localhost:8080/help.html for help
+on the shim configuration file (/var/lib/shim/conf) and the API.
 
 .SH OPTIONS
 .TP
 .B \-h
-Display help
+Display help.
 .TP
 .B \-f
-Run in the foreground (defaults to the background).
-.TP
-.B \-p \fIport\fR
-Listen on the specified port. Shim defaults to ports 8080 and 8083(SSL).
-.TP
-.B \-r \fIpath\fR
-Set the HTTP document root to the specified path. Default installations
-of shim use /var/lib/shim/wwwroot by default.
-.TP
-.B \-n \fIhost\fR
-Talk to SciDB on the specified host, localhost by default.
-.TP
-.B \-s \fIport\fR
-Talk to SciDB on the specified port, 1239 by default.
-.TP
-.B \-t \fItmpdir\fR
-Set the directory used for temporary file I/O, /tmp by default.
-.TP
-.B \-i \fIinstance_id\fR
-Set the instance id used to save data, must have write access to \fItmpdir\rR.
-.TP
-.B \-o \fItimeout\fR
-Set the HTTP session timeout. After this period of inactivity, an HTTP session
-may be declared dead and its resources reclaimed. Default of 60 (seconds).
-.TP
-.B \-m \fImax_sessions\fR
-Set the maximum number of concurrent HTTP sessions, default of 50.
-.TP
-.B \-a
-Use the optional SciDB aio_tools plugin.
+Run in the foreground (defaults to a background daemon).
 .TP
 .B \-v
 Display version information.
-
+.TP
+.B \-c
+Overrides the default configuration file of '/var/lib/shim/conf'.
+.TP
+.B \-p
+Overrides the default pid file of '/var/run/shim.pid'.
 
 .SH AUTHOR
 Written by Bryan Wayne Lewis, Paradigm4 Inc.
+Modified by Martin Resnick, Paradigm4 Inc.
 .SH COPYRIGHT
-Copyright (C) 2012-2018 Paradigm4 Inc.
+Copyright (C) 2012-2019 Paradigm4 Inc.
