@@ -53,7 +53,7 @@ unsigned long long executeQuery (void *con, char *query, int afl, char *err);
 
 void prepare_query (void *, void *, char *, int, char *);
 
-ShimQueryID execute_prepared_query (void *, char *, struct prep *, int, char *);
+ShimQueryID execute_prepared_query (void *, char *, struct prep *, int, char *, int);
 
 void completeQuery (ShimQueryID id, void *con, char *err);
 

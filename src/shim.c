@@ -1716,6 +1716,20 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
       snprintf (qry, k + MAX_VARLEN, "%s", qrybuf);
     }
 
+  // Before this change, and in the case that the client ignores
+  // the query result (either by supplying '-n' with iquery or not pulling
+  // the result array here in the shim) then any side-effects of query execution
+  // are not guaranteed to occur.  For example, a query like 'apply(arr, x, func(v))'
+  // that is executed but not pulled by the client will not guarantee that 
+  // function 'func' is applied to every v in arr.
+  // This change, and the corresponding change in SciDB, is a temporary
+  // workaround until CCM roll-out occurs, whereby a consume() is injected
+  // at the root of the query when the client indicates that they will not
+  // pull the query result.  In that case, consume() acts to pull the result
+  // array on every instance, therby ensuring side-effects occur just as they
+  // would had the client pulled the result array.
+  int fetch = s->save;
+
   syslog (LOG_INFO,
           "execute_query[%.*s]: execute, scidb[0] %p, scidb[1] %p, query %s",
           SESSIONID_SHOW_LEN,
@@ -1761,7 +1775,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
            s->time = time (NULL) + WEEK;
            if (s->scidb[0])
              {
-               q = execute_prepared_query (s->scidb[0], qstart, &pq, 1, SERR);
+               q = execute_prepared_query (s->scidb[0], qstart, &pq, 1, SERR, fetch);
              }
            if (q.queryid < 1)            // something went wrong
              {
@@ -1825,7 +1839,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
   s->time = time (NULL) + WEEK;
   if (s->scidb[0])
     {
-      q = execute_prepared_query (s->scidb[0], qry, &pq, 1, SERR);
+      q = execute_prepared_query (s->scidb[0], qry, &pq, 1, SERR, fetch);
     }
   if (q.queryid < 1)            // something went wrong
     {
