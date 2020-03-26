@@ -38,7 +38,7 @@ before_install:
 
 install:
   - docker exec scidb bash -c
-    "echo 'deb https://downloads.paradigm4.com/ extra/${SCIDB_VER}/ubuntu16.04/' >> /etc/apt/sources.list.d/scidb.list"
+    "echo 'deb https://downloads.paradigm4.com/ extra/${SCIDB_VER}/ubuntu14.04/' >> /etc/apt/sources.list.d/scidb.list"
 
   - docker exec scidb apt-get update
   - docker exec scidb apt-get install
