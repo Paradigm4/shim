@@ -33,15 +33,22 @@ INC=-I. -DPROJECT_ROOT="\"$(SCIDB)\"" -I"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boo
 LIBS=-lstdc++ -ldl -lz -pthread -L"$(SCIDB_THIRDPARTY_PREFIX)/3rdparty/boost/lib" -L"$(SCIDB)/lib" -lscidbclient -lboost_system -Wl,--enable-new-dtags -Wl,-rpath,'$$ORIGIN:$$ORIGIN/../lib:$$ORIGIN/../../:$(SCIDB)/3rdparty/boost/lib:'
 
 # Compiler settings for SciDB version >= 15.7
-ifneq ("$(wildcard /usr/bin/g++-4.9)","")
-  CC := "/usr/bin/gcc-4.9"
-  CXX := "/usr/bin/g++-4.9"
-  CXXFLAGS=-std=c++14
+GCCVERSIONGTE49 := $(shell expr `gcc -dumpversion | cut -f1-2 -d.` \>= 4.9)
+ifeq "$(GCCVERSIONGTE49)" "1"
+      CC := "gcc"
+      CXX := "g++"
+      CXXFLAGS=-std=c++14
 else
-  ifneq ("$(wildcard /opt/rh/devtoolset-3/root/usr/bin/gcc)","")
-    CC := "/opt/rh/devtoolset-3/root/usr/bin/gcc"
-    CXX := "/opt/rh/devtoolset-3/root/usr/bin/g++"
-    CXXFLAGS=-std=c++14
+  ifneq ("$(wildcard /usr/bin/g++-4.9)","")
+      CC := "/usr/bin/gcc-4.9"
+      CXX := "/usr/bin/g++-4.9"
+      CXXFLAGS=-std=c++14
+  else
+    ifneq ("$(wildcard /opt/rh/devtoolset-3/root/usr/bin/gcc)","")
+      CC := "/opt/rh/devtoolset-3/root/usr/bin/gcc"
+      CXX := "/opt/rh/devtoolset-3/root/usr/bin/g++"
+      CXXFLAGS=-std=c++14
+    endif
   endif
 endif
 
