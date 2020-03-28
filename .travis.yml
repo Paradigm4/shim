@@ -46,8 +46,6 @@ install:
     --no-install-recommends
     busybox-syslogd
     curl
-    gcc
-    g++
     libarrow-dev=0.9.0-1
     libpcre3-dev
     libpqxx-dev
