@@ -30,15 +30,15 @@ before_install:
     --volume `pwd`:/shim
     --publish 8080:8080
     rvernica/scidb:${SCIDB_VER} #-ext
-  # - while ! curl http://localhost:8080/version; do sleep 1; done
-  # - docker exec scidb service shimsvc stop
+  - while ! curl http://localhost:8080/version; do sleep 1; done
+  - docker exec scidb service shimsvc stop
   - docker exec scidb sed --in-place
     "\#deb http://deb.debian.org/debian jessie-updates main#d"
     /etc/apt/sources.list
 
 install:
   - docker exec scidb bash -c
-    "echo 'deb https://downloads.paradigm4.com/ extra/${SCIDB_VER}/ubuntu14.04/' >> /etc/apt/sources.list.d/scidb.list"
+    "echo 'deb https://downloads.paradigm4.com/ extra/${SCIDB_VER}/ubuntu16.04/' >> /etc/apt/sources.list.d/scidb.list"
 
   - docker exec scidb apt-get update
   - docker exec scidb apt-get install
