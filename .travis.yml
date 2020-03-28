@@ -8,8 +8,7 @@ python:
   - "3.6"
 
 env:
-  - SCIDB_VER=19.11
-  - BUILD_IMG=-xenial
+  - SCIDB_VER=19.11 BUILD_IMG=-xenial
 
 services:
   - docker
