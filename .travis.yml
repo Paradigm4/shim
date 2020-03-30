@@ -71,7 +71,7 @@ script:
   - docker exec scidb make --directory=/shim test
   - docker exec scidb /shim/shim start
   - pytest tests/pytest/test_sessions.py
-  - pytest -n 5 tests/pytest/test_sessions_multi.py
+  - pytest -n 3 tests/pytest/test_sessions_multi.py
 
 after_failure:
   - docker logs scidb
