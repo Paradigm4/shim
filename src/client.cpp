@@ -187,7 +187,7 @@ prepare_query(void *result, void *con, char *query, int afl, char *err)
  * returns a sQueryID struct with queryid set to 0.
  */
 extern "C" ShimQueryID
-execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *err)
+execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *err, int fetch)
 {
   ShimQueryID qid;
   const string &queryString = (const char *)query;
@@ -195,6 +195,7 @@ execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *e
   qid.queryid = 0;
   qid.coordinatorid = 0;
   scidb::QueryResult *q = (scidb::QueryResult *)pq->queryresult;
+  q->fetch = (fetch != 0);
   if(!q)
   {
     snprintf(err,MAX_VARLEN,"Invalid query result object.\n");

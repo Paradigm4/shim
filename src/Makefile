@@ -51,6 +51,9 @@ else
     endif
   endif
 endif
+
+CXXFLAGS=-std=c++11 -std=gnu++14
+
 # default: empty DESTDIR implicitly installs to /
 DESTDIR=
 

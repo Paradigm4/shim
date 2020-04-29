@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 ## --
 ## -- - read_* - --
 ## --
@@ -52,7 +52,7 @@ test "$res" == "200"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
 test "$res" == "200"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/read_bytes?id=$ID")
@@ -77,7 +77,7 @@ test "$res" == "200"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
 test "$res" == "200"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/read_bytes?id=$ID")
@@ -104,7 +104,7 @@ test "$res" == "200"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
 test "$res" == "200"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()")
 test "$res" == "200"
@@ -137,11 +137,11 @@ test "$res" == "200"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
 test "$res" == "200"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()")
 test "$res" == "200"
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()")
 test "$res" == "200"
@@ -196,7 +196,7 @@ test "$res" == "$err"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID")
 test "$res" == "200"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 
 res=$($CURL "$SHIM_URL/read_bytes?id=$ID")
@@ -226,7 +226,7 @@ err="EOF - range out of bounds416"
 res=$($CURL "$SHIM_URL/read_lines?id=$ID&n=10")
 test "$res" == "$err"
 
-res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string)")
+res=$($CURL $NO_OUT "$SHIM_URL/execute_query?id=$ID&query=list()&save=(string,int64,int64,string,bool,bool,string,string,string)")
 test "$res" == "200"
 err="EOF - range out of bounds416"
 
