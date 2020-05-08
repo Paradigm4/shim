@@ -8,7 +8,10 @@ python:
   - "3.6"
 
 env:
-  - SCIDB_VER=19.11 BUILD_IMG=-xenial
+  global: SCIDB_VER=19.11
+  matrix:
+    - BUILD_IMG=-xenial
+    - BUILD_IMG=-centos-7
 
 services:
   - docker
