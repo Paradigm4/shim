@@ -34,8 +34,20 @@ before_install:
     --volume `pwd`:/shim
     --publish 8080:8080
     rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
+
+  - if [ "$SCIDB_IMG" = "-centos-7" ]; then
+      docker exec scidb /opt/scidb/$SCIDB_VER/bin/scidbctl.py start scidb ;
+      docker exec scidb systemctl start shimsvc ;
+    fi
+
   - while ! curl http://localhost:8080/version; do sleep 1; done
-  - docker exec scidb service shimsvc stop
+
+
+  - if [ "$SCIDB_IMG" = "-centos-7" ]; then
+      docker exec scidb systemctl stop shimsvc ;
+    else
+      docker exec scidb service shimsvc stop ;
+    fi
 
 install:
   - docker exec scidb bash -c
