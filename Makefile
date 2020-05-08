@@ -63,7 +63,7 @@ service: install
 	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
 # systemctl
 	- @if test -n "$$(which systemctl 2>/dev/null)"; then systemctl disable shimsvc 2>/dev/null||true; fi
-	- @if test -n "$$(which systemctl 2>/dev/null)"; then sed "s!XXX_SCIDB_VER_XXX!$(SCIDB_VERSION)!g" init.d/shimvc.service > /lib/systemd/system/shimsvc.service; fi
+	- @if test -n "$$(which systemctl 2>/dev/null)"; then sed "s!XXX_SCIDB_VER_XXX!$(SCIDB_VERSION)!g" init.d/shimsvc.service > /lib/systemd/system/shimsvc.service; fi
 	- @if test -n "$$(which systemctl 2>/dev/null)"; then systemctl daemon-reload; systemctl enable shimsvc; systemctl start shimsvc; fi
 # update-rc
 	- @if test -n "$$(which update-rc.d 2>/dev/null)"; then update-rc.d -f shimsvc remove 2>/dev/null||true; fi
