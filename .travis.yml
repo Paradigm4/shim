@@ -23,12 +23,14 @@ before_install:
 
   - docker pull rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
   - docker run
-    --name scidb
     --detach
-    --volume /dev/shm
-    --tmpfs /dev/shm
-    --volume `pwd`:/shim
+    --name scidb
     --publish 8080:8080
+    --tmpfs /dev/shm
+    --volume /dev/shm
+    --volume /sys/fs/cgroup:/sys/fs/cgroup:ro
+    --volume /tmp/$(mktemp --directory):/run
+    --volume `pwd`:/shim
     rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
 
   - if [ "$SCIDB_IMG" = "-centos-7" ]; then
