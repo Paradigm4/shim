@@ -6,8 +6,8 @@ python:
 env:
   global: SCIDB_VER=19.11
   matrix:
-    - BUILD_IMG=-xenial
-    - BUILD_IMG=-centos-7
+    - SCIDB_IMG=-xenial
+    - SCIDB_IMG=-centos-7
 
 services:
   - docker
@@ -21,7 +21,7 @@ before_install:
     https://github.com/Paradigm4/superfunpack/archive/master.tar.gz
     | tar --extract --gzip --directory=.
 
-  - docker pull rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
+  - docker pull rvernica/scidb:${SCIDB_VER}${SCIDB_IMG}
   - docker run
     --detach
     --name scidb
@@ -31,7 +31,7 @@ before_install:
     --volume /sys/fs/cgroup:/sys/fs/cgroup:ro
     --volume /tmp/$(mktemp --directory):/run
     --volume `pwd`:/shim
-    rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
+    rvernica/scidb:${SCIDB_VER}${SCIDB_IMG}
 
   - if [ "$SCIDB_IMG" = "-centos-7" ]; then
       docker exec scidb /opt/scidb/$SCIDB_VER/bin/scidbctl.py start scidb ;
