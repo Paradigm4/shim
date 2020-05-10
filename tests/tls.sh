@@ -39,7 +39,7 @@ openssl req                                                     \
     -keyout $SHIM_DIR/ssl_cert.pem                              \
 2> /dev/null                                                    \
 >> $SHIM_DIR/ssl_cert.pem
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start 2>/dev/null &
 sleep 1
 
 

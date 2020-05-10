@@ -22,7 +22,7 @@ function fail {
 
 mkdir -p $SHIM_DIR/wwwroot
 echo "homer:elmo" > $SHIM_DIR/wwwroot/.htpasswd
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start 2>/dev/null &
 sleep 1
 
 t1=$(date +"%s.%N")

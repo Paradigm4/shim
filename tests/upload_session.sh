@@ -39,7 +39,7 @@ if [ ! -z ${credentials+x} ]
 then
     echo "$credentials" > $SHIM_DIR/wwwroot/.htpasswd
 fi
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start 2>/dev/null &
 sleep 1
 
 
