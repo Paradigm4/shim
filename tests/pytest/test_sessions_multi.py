@@ -12,16 +12,16 @@ N = int(os.environ.get('PYTEST_XDIST_WORKER_COUNT'))
 
 
 queries = (
-#     """
-# store(
-#   build(<x:int64>[i=1:{sz}], i),
-#   ar_{qid}_{sid})""",
-#     """
-# store(
-#   apply(
-#     build(<x:int64>[i=1:{sz}], i),
-#     y, x * x),
-#   ar_{qid}_{sid})""",
+    """
+store(
+  build(<x:int64>[i=1:{sz}], i),
+  ar_{qid}_{sid})""",
+    """
+store(
+  apply(
+    build(<x:int64>[i=1:{sz}], i),
+    y, x * x),
+  ar_{qid}_{sid})""",
     """
 store(
   cross_join(
