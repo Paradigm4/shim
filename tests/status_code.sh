@@ -37,7 +37,7 @@ trap cleanup EXIT
 ## Setup
 mkdir --parents $SHIM_DIR/wwwroot
 echo $HTTP_AUTH > $SHIM_DIR/wwwroot/.htpasswd
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start 2>/dev/null &
 sleep 1
 
 

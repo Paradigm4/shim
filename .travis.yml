@@ -1,39 +1,43 @@
-sudo: required
-dist: trusty
-group: deprecated-2017Q4
-
 language: python
 
 python:
   - "3.6"
 
 env:
-  global: SCIDB_VER=19.11
-  matrix:
-    - BUILD_IMG=-xenial
-    - BUILD_IMG=-centos-7
+  global: SCIDB_VER=19.11 ARROW_VER=0.9.0-1
+  jobs:
+    - SCIDB_IMG=          TEST_BASIC=true
+    - SCIDB_IMG=-xenial   TEST_BASIC=true
+    - SCIDB_IMG=-xenial   TEST_BASIC=false
+    - SCIDB_IMG=-centos-7 TEST_BASIC=true
+    - SCIDB_IMG=-centos-7 TEST_BASIC=false
 
 services:
   - docker
 
 before_install:
-  - wget --no-verbose --output-document -
-    https://github.com/Paradigm4/accelerated_io_tools/archive/v${SCIDB_VER}.2.tar.gz
-    | tar --extract --gzip --directory=.
+  - if [ "$TEST_BASIC" = "false" ]; then
+      wget --no-verbose --output-document -
+        https://github.com/Paradigm4/accelerated_io_tools/archive/v${SCIDB_VER}.2.tar.gz
+        | tar --extract --gzip --directory=. ;
+      wget --no-verbose --output-document -
+        https://github.com/Paradigm4/superfunpack/archive/v${SCIDB_VER}.1.tar.gz
+        | tar --extract --gzip --directory=. ;
+    fi
 
-  - wget --no-verbose --output-document -
-    https://github.com/Paradigm4/superfunpack/archive/master.tar.gz
-    | tar --extract --gzip --directory=.
+  - docker pull rvernica/scidb:${SCIDB_VER}${SCIDB_IMG}
 
-  - docker pull rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
   - docker run
-    --name scidb
     --detach
-    --volume /dev/shm
-    --tmpfs /dev/shm
-    --volume `pwd`:/shim
+    --env ARROW_VER=$ARROW_VER
+    --name scidb
     --publish 8080:8080
-    rvernica/scidb:${SCIDB_VER}${BUILD_IMG}
+    --tmpfs /dev/shm
+    --volume /dev/shm
+    --volume /sys/fs/cgroup:/sys/fs/cgroup:ro
+    --volume /tmp/$(mktemp --directory):/run
+    --volume `pwd`:/shim
+    rvernica/scidb:${SCIDB_VER}${SCIDB_IMG}
 
   - if [ "$SCIDB_IMG" = "-centos-7" ]; then
       docker exec scidb /opt/scidb/$SCIDB_VER/bin/scidbctl.py start scidb ;
@@ -42,7 +46,6 @@ before_install:
 
   - while ! curl http://localhost:8080/version; do sleep 1; done
 
-
   - if [ "$SCIDB_IMG" = "-centos-7" ]; then
       docker exec scidb systemctl stop shimsvc ;
     else
@@ -50,43 +53,21 @@ before_install:
     fi
 
 install:
-  - docker exec scidb bash -c
-    "echo 'deb https://downloads.paradigm4.com/ extra/${SCIDB_VER}/ubuntu16.04/' >> /etc/apt/sources.list.d/scidb.list"
-
-  - docker exec scidb apt-get update
-  - docker exec scidb apt-get install
-    --assume-yes
-    --no-install-recommends
-    bc
-    busybox-syslogd
-    curl
-    libarrow-dev=0.9.0-1
-    libpcre3-dev
-    libpqxx-dev
-
-  - docker exec scidb make --directory=/shim/accelerated_io_tools-${SCIDB_VER}.2
-  - docker exec scidb cp
-    /shim/accelerated_io_tools-${SCIDB_VER}.2/libaccelerated_io_tools.so
-    /opt/scidb/${SCIDB_VER}/lib/scidb/plugins/
-  - docker exec scidb iquery --afl --query "load_library('accelerated_io_tools')"
-
-  - docker exec scidb make --directory=/shim/superfunpack-master
-  - docker exec scidb cp
-    /shim/superfunpack-master/libsuperfunpack.so
-    /opt/scidb/${SCIDB_VER}/lib/scidb/plugins/
-  - docker exec scidb iquery --afl --query "load_library('superfunpack')"
-
-  - docker exec scidb ln --symbolic
-    /opt/scidb/${SCIDB_VER}/lib/libscidbclient.so /lib/
+  - docker exec scidb /shim/tests/docker-install.sh $TEST_BASIC
   - docker exec scidb make --directory=/shim install
-  # - docker exec scidb /sbin/syslogd -n -S -O /dev/stdout &
   - pip install --upgrade -r tests/pytest/requirements.txt
 
 script:
-  - docker exec scidb make --directory=/shim test
+  - if [ "$TEST_BASIC" = "true" ]; then
+      docker exec scidb make --directory=/shim test_basic ;
+    else
+      docker exec scidb make --directory=/shim test ;
+      docker exec scidb env AIO=aio make --directory=/shim test ;
+    fi
+
   - docker exec scidb /shim/shim start
   - pytest tests/pytest/test_sessions.py
-  - pytest -n 2 tests/pytest/test_sessions_multi.py
+  - pytest -n 10 tests/pytest/test_sessions_multi.py
 
 after_failure:
   - docker logs scidb

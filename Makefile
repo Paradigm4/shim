@@ -126,89 +126,92 @@ test0:
 	@echo "ALL TESTS REQUIRE A SCIDB SERVER ON 127.0.0.1:1239 WITH security=trust"
 
 test1: shim
-	@echo "Non-authenticated test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/noauth.sh
+	@echo "-- - Non-authenticated test"
+	./tests/noauth.sh
 
 test2: shim
-	@echo "Basic digest authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/digest_auth.sh
+	@echo "-- - Basic digest authentication"
+	./tests/digest_auth.sh
 
 test3: shim
-	@echo "TLS without authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls.sh
+	@echo "-- - TLS without authentication"
+	./tests/tls.sh
 
 test4: shim
-	@echo "TLS with digest authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls_digest.sh
+	@echo "-- - TLS with digest authentication"
+	./tests/tls_digest.sh
 
 test5: shim
-	@echo "TLS with SciDB authentication"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/tls_scidbauth.sh
+	@echo "-- - TLS with SciDB authentication"
+	./tests/tls_scidbauth.sh
 
 test6: shim
-	@echo "cancel test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/cancel.sh
+	@echo "-- - cancel test"
+	./tests/cancel.sh
 
 # test7: shim
-# 	@echo "multiuser streaming test"
-# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/multiple_users_stream.sh
+# 	@echo "-- - multiuser streaming test"
+# 	./tests/multiple_users_stream.sh
 
 # test8: shim
-# 	@echo "repeated multiuser streaming test"
-# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/more_multiple_users_stream.sh
+# 	@echo "-- - repeated multiuser streaming test"
+# 	./tests/more_multiple_users_stream.sh
 
 test9: shim
-	@echo "read_bytes test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read_bytes.sh
+	@echo "-- - read_bytes test"
+	./tests/read_bytes.sh
 
 # test10: shim
-# 	@echo "file upload test"
-# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_file.sh
+# 	@echo "-- - file upload test"
+# 	./tests/upload_file.sh
 
 # test11: shim0
-# 	@echo "valgrind test"
-# 	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/valgrind.sh
-# 	@echo "Now carefully inspect the report in /tmp/valgrind.out"
+# 	@echo "-- - valgrind test"
+# 	./tests/valgrind.sh
+# 	@echo "-- - Now carefully inspect the report in /tmp/valgrind.out"
 
 test12: shim
-	@echo "post upload test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload.sh
+	@echo "-- - post upload test"
+	./tests/upload.sh
 
 test13: shim
-	@echo "post upload test session"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/upload_session.sh
+	@echo "-- - post upload test session"
+	./tests/upload_session.sh
 
 test14: shim
-	@echo "get_log test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/get_log.sh
+	@echo "-- - get_log test"
+	./tests/get_log.sh
 
 test15: shim
-	@echo "status code test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/status_code.sh
+	@echo "-- - status code test"
+	./tests/status_code.sh
 
 test16: shim
-	@echo "read test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/read.sh
+	@echo "-- - read test"
+	./tests/read.sh
 
 test17: shim
-	@echo "crash test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/crash.sh
+	@echo "-- - crash test"
+	./tests/crash.sh
 
 test18: shim
-	@echo "auth test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/auth.sh
+	@echo "-- - auth test"
+	./tests/auth.sh
 
 test19: shim
-	@echo "admin test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/admin.sh
+	@echo "-- - admin test"
+	./tests/admin.sh
 
 test20: shim
-	@echo "atts_only test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/atts_only.sh
+	@echo "-- - atts_only test"
+	./tests/atts_only.sh
 
-test: test0 test1 test2 test3 test4 test5 test6 test9 test12 test13 test14 test15 test16 test17 test19 test20
+test_basic: export LD_LIBRARY_PATH = "$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib"
+test_basic: test0 test1 test2 test3 test4 test5 test9 test12 test13 test14 test15 test16 test17 test19
 
-grinder: shim0
+test: test_basic test6 test20
+
+grinder: shim0 test_init
 	@echo "multiuser valgrind test"
-	@LD_LIBRARY_PATH="$(SCIDB)/lib:$(SCIDB)/3rdparty/boost/lib" ./tests/grinder.sh
+	./tests/grinder.sh
 	@echo "Now carefully inspect the report in /tmp/grinder.out"

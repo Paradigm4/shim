@@ -19,7 +19,7 @@ function fail {
 }
 
 mkdir -p $SHIM_DIR/wwwroot
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start 2>/dev/null &
 sleep 1
 
 id=$(curl -s "http://${host}:${port}/new_session" | tr -d '[\r\n]')

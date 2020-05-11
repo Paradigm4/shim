@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HOST=localHOST
+HOST=localhost
 PORT=8088
 SHIM_DIR=/tmp/shim
 MYDIR=$(dirname $0)
@@ -11,16 +11,20 @@ pushd $MYDIR/../ > /dev/null 2>&1
 SHIM=$(pwd)/shim
 popd > /dev/null 2>&1
 
+function cleanup {
+    kill -s SIGKILL %1
+    wait %1 2>/dev/null || true
+    rm --recursive $SHIM_DIR
+}
+
 function fail {
-  echo "FAIL"
-  kill -s SIGKILL %1
-  wait %1 2>/dev/null || true
-  rm --recursive $SHIM_DIR
-  exit 1
+    echo "FAIL"
+    cleanup
+    exit 1
 }
 
 mkdir -p $SHIM_DIR/wwwroot
-$SHIM -c $MYDIR/conf -f start 2>/dev/null &
+$SHIM -c $MYDIR/conf$AIO -f start &
 sleep 1
 
 id=$(curl -s "http://${HOST}:${PORT}/new_session" | tr -d '[\r\n]')
@@ -29,7 +33,5 @@ curl -f -s "http://${HOST}:${PORT}/read_lines?id=${id}&n=0" >/dev/null  || fail
 curl -f -s "http://${HOST}:${PORT}/release_session?id=${id}" >/dev/null  || fail
 
 echo "PASS"
-kill -s SIGKILL %1
-wait %1 2>/dev/null || true
-rm --recursive $SHIM_DIR
+cleanup
 exit 0

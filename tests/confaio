@@ -13,4 +13,4 @@ doc=/tmp/shim/wwwroot
 # user=$SCIDBUSER
 # max_sessions=50
 # timeout=60
-# aio=1
+aio=1
