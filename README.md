@@ -1,6 +1,6 @@
 # shim
 
-[![SciDB 19.11](https://img.shields.io/badge/SciDB-19.11-blue.svg)](https://forum.paradigm4.com/t/scidb-release-19-3/2359)
+[![SciDB 19.11](https://img.shields.io/badge/SciDB-19.11-blue.svg)](https://forum.paradigm4.com/t/scidb-release-19-11/2411)
 [![Build Status](https://travis-ci.org/Paradigm4/shim.svg)](https://travis-ci.org/Paradigm4/shim)
 
 Shim is a super-basic SciDB client that exposes limited SciDB functionality
