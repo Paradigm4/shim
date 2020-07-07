@@ -1800,7 +1800,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
             }
            if (s->scidb[0])
              {
-               completeQuery (q, s->scidb[0], SERR);
+               completeQuery (&pq, s->scidb[0], SERR);
              }
            qstart = qend + 1;
          }
@@ -1865,7 +1865,7 @@ execute_query (struct mg_connection *conn, const struct mg_request_info *ri)
     }
   if (s->scidb[0])
     {
-      completeQuery (q, s->scidb[0], SERR);
+      completeQuery (&pq, s->scidb[0], SERR);
     }
 
   free (qry);

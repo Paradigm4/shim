@@ -55,6 +55,6 @@ void prepare_query (void *, void *, char *, int, char *);
 
 ShimQueryID execute_prepared_query (void *, char *, struct prep *, int, char *, int);
 
-void completeQuery (ShimQueryID id, void *con, char *err);
+void completeQuery (struct prep* pq, void *con, char *err);
 
 #endif /* SRC_CLIENT_H_ */

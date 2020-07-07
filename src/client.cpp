@@ -209,9 +209,9 @@ execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *e
   {
     qid.queryid = 0;
     snprintf(err,MAX_VARLEN,"%s",e.what());
+    delete q;
+    pq->queryresult = NULL;
   }
-  delete q;
-  pq->queryresult = NULL;
   return qid;
 }
 
@@ -219,7 +219,7 @@ execute_prepared_query(void *con, char *query, struct prep *pq, int afl, char *e
 /* Complete a SciDB query, where char buffer err is a buffer of length
  * MAX_VARLEN on input that will hold an error message should one occur.
  */
-extern "C" void completeQuery(ShimQueryID qid, void *con, char *err)
+void completeQueryInternal(ShimQueryID qid, void *con, char *err)
 {
   scidb::SciDBClient& db = scidb::getSciDB();
   scidb::QueryID q = scidb::QueryID(qid.coordinatorid, qid.queryid);
@@ -229,4 +229,20 @@ extern "C" void completeQuery(ShimQueryID qid, void *con, char *err)
   {
     snprintf(err,MAX_VARLEN,"%s",e.what());
   }
+}
+
+extern "C" void completeQuery(struct prep* pq, void *con, char *err)
+{
+  scidb::QueryResult *qr = (scidb::QueryResult *)pq->queryresult;
+  if (!qr->queryID.isValid() || qr->autoCommit) {
+    delete qr;
+    pq->queryresult = NULL;
+    return;
+  }
+
+  ShimQueryID qid = pq->queryid;
+  completeQueryInternal(qid, con, err);
+
+  delete qr;
+  pq->queryresult = NULL;
 }
