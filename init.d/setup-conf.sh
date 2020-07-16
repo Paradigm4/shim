@@ -1,23 +1,32 @@
 #!/bin/bash
-# /var/lib/shim/conf
 #
-# This script is run to setup the initial shim configuration file.
+# This script is run to setup the initial shim configuration file and
+# certificate file. If the configuration file or the certificate file
+# already exist they are *not* re-created.
 
-mkdir -p /var/lib/shim
-# Set up config file defaults
-PORT=1239
-INS=0
-TMP=/tmp
-s=`ps aux | grep SciDB  | grep "dbname" | head -n 1`
-if test -n "$s"; then
-  PORT=`echo "$s" | sed -e "s/.*--port //;s/ .*//"`
-  INS=`echo "$s" | sed -e "s/.*--storage //;s/ .*//" | sed -e "s@.*/[0-9]*/\([0-9]*\)/.*@\1@"`
-  INS=$(( $INS ))
-  TMP=`echo "$s" | sed -e "s/.*--storage //;s/ .*//"`
-  TMP=`dirname $TMP`
-  SCIDBUSER=`ps axfo user:64,cmd | grep SciDB | grep dbname | head -n 1 | cut -d ' ' -f 1`
-# Write out an example config file to /var/lib/shim/conf using running scidb parameters
-cat >/var/lib/shim/conf << EOF
+CONF_FILE=/var/lib/shim/conf
+CERT_FILE=/var/lib/shim/ssl_cert.pem
+
+if [ -e "$CONF_FILE" ]
+then
+    echo "$CONF_FILE file exists, skip re-creating it."
+else
+    mkdir -p /var/lib/shim
+    # Set up config file defaults
+    PORT=1239
+    INS=0
+    TMP=/tmp
+    s=`ps aux | grep SciDB  | grep "dbname" | head -n 1`
+    if test -n "$s"
+    then
+        PORT=`echo "$s" | sed -e "s/.*--port //;s/ .*//"`
+        INS=`echo "$s" | sed -e "s/.*--storage //;s/ .*//" | sed -e "s@.*/[0-9]*/\([0-9]*\)/.*@\1@"`
+        INS=$(( $INS ))
+        TMP=`echo "$s" | sed -e "s/.*--storage //;s/ .*//"`
+        TMP=`dirname $TMP`
+        SCIDBUSER=`ps axfo user:64,cmd | grep SciDB | grep dbname | head -n 1 | cut -d ' ' -f 1`
+        # Write out an example config file to $CONF_FILE using running SciDB parameters
+        cat > "$CONF_FILE" << EOF
 # Shim configuration file
 # Uncomment and change any of the following values. Restart shim for
 # your changes to take effect (default values are shown). See
@@ -34,9 +43,9 @@ user=$SCIDBUSER
 #timeout=60
 #aio=0
 EOF
-else
-# Write out an example config file to /var/lib/shim/conf completely commented out
-cat >/var/lib/shim/conf << EOF
+    else
+        # Write out an example config file to $CONF_FILE completely commented out
+        cat > "$CONF_FILE" << EOF
 # Shim configuration file
 # Uncomment and change any of the following values. Restart shim for
 # your changes to take effect (default values are shown). See
@@ -53,11 +62,26 @@ cat >/var/lib/shim/conf << EOF
 #timeout=60
 #aio=0
 EOF
+    fi
 fi
 
-# Generate a certificate
-openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=MA/L=Waltham/O=Paradigm4/CN=$(hostname)" -keyout /var/lib/shim/ssl_cert.pem 2>/dev/null >> /var/lib/shim/ssl_cert.pem
-if test $? -ne 0; then
-  echo "SSL certificate generation failed openssl not found: TLS disabled."
-  rm -f /var/lib/shim/ssl_cert.pem
+if [ -e "$CERT_FILE" ]
+then
+    echo "$CERT_FILE file exists, skip re-creating it."
+else
+    # Generate a certificate
+    openssl req                                                         \
+            -new                                                        \
+            -newkey rsa:4096                                            \
+            -days 3650                                                  \
+            -nodes                                                      \
+            -x509                                                       \
+            -subj "/C=US/ST=MA/L=Waltham/O=Paradigm4/CN=$(hostname)"    \
+            -keyout "$CERT_FILE"                                        \
+            2> /dev/null                                                \
+            >> "$CERT_FILE"
+    if test $? -ne 0; then
+        echo "SSL certificate generation failed openssl not found: TLS disabled."
+        rm -f "$CERT_FILE"
+    fi
 fi
