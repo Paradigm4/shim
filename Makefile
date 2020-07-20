@@ -20,7 +20,7 @@ client:
 	$(MAKE) -C src client
 
 help:
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 	@echo "make shim      (compile and link)"
 	@echo
 	@echo "The remaining options may require setting the SCIDB environment"
@@ -39,7 +39,7 @@ help:
 	@echo "Other tests are available. Read the contents of Makefile for details."
 
 install: shim stop-service
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 	@mkdir -p "$(DESTDIR)$(SCIDB)/bin"
 	cp shim "$(DESTDIR)$(SCIDB)/bin"
 	mkdir -p "$(DESTDIR)/var/lib/shim"
@@ -49,7 +49,7 @@ install: shim stop-service
 	@if test -d $(DESTDIR)/usr/local/share/man/man1;then cp man/shim.1 $(DESTDIR)/usr/local/share/man/man1/;fi
 
 uninstall: stop-service
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 	rm -f "$(SCIDB)/bin/shim"
 	rm -rf /var/lib/shim
 	rm -f /usr/local/share/man/man1/shim.1
@@ -60,7 +60,7 @@ stop-service:
 	- @if test -n "$$(which chkconfig 2>/dev/null)";   then service shimsvc stop 2>/dev/null||true; fi
 
 service: install
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 # systemctl
 	- @if test -n "$$(which systemctl 2>/dev/null)"; then systemctl disable shimsvc 2>/dev/null||true; fi
 	- @if test -n "$$(which systemctl 2>/dev/null)"; then sed "s!XXX_SCIDB_VER_XXX!$(SCIDB_VERSION)!g" init.d/shimsvc.service > /lib/systemd/system/shimsvc.service; fi
@@ -82,7 +82,7 @@ unservice: stop-service
 
 deb-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 	rm -rf pkgroot *.deb
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
@@ -101,7 +101,7 @@ deb-pkg: shim
 
 rpm-pkg: shim
 	@if test -z "$$(which fpm 2>/dev/null)"; then echo "Error: Package building requires fpm, try running gem install fpm."; exit 1;fi
-	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.3 $@'"; exit 1; fi
+	@if test ! -d "$(SCIDB)"; then echo  "Can't find the scidb executable. Try explicitly setting the SCIDB variable, for example: 'make SCIDB=/opt/scidb/19.11 $@'"; exit 1; fi
 	rm -rf pkgroot *.rpm
 	mkdir -p pkgroot/$(SCIDB)/bin
 	cp shim "pkgroot/$(SCIDB)/bin"
