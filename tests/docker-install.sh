@@ -9,13 +9,9 @@ then
     # TEST_BASIC=false
     if [ "$1" = "false" ]
     then
-        cat <<EOF | tee /etc/yum.repos.d/scidb-extra.repo
-[scidb-extra]
-name=SciDB extra libs repository
-baseurl=https://downloads.paradigm4.com/extra/$SCIDB_VER/centos7
-gpgcheck=0
-enabled=1
-EOF
+        yum install --assumeyes https://apache.bintray.com/arrow/centos/$(
+            cut --delimiter : --fields 5 /etc/system-release-cpe
+            )/apache-arrow-release-latest.rpm
 
         for pkg in arrow-devel-$ARROW_VER.el6   \
                    libpqxx-devel
@@ -24,10 +20,6 @@ EOF
         done
     fi
 else
-    # Ubuntu/Debian
-    echo "deb https://downloads.paradigm4.com/ extra/$SCIDB_VER/ubuntu16.04/" \
-         >> /etc/apt/sources.list.d/scidb.list
-
     apt-get update
     apt-get install                             \
         --assume-yes                            \
@@ -38,6 +30,13 @@ else
     # TEST_BASIC=false
     if [ "$1" = "false" ]
     then
+        id=`lsb_release --id --short`
+        codename=`lsb_release --codename --short`
+        wget https://apache.bintray.com/arrow/$(
+            echo $id | tr 'A-Z' 'a-z'
+             )/apache-arrow-archive-keyring-latest-$codename.deb
+        apt install --assume-yes ./apache-arrow-archive-keyring-latest-$codename.deb
+
         apt-get install                         \
             --assume-yes                        \
             --no-install-recommends             \
