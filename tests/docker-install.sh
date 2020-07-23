@@ -50,8 +50,8 @@ fi
 # TEST_BASIC=false
 if [ "$1" = "false" ]
 then
-    make --directory=/shim/accelerated_io_tools-$SCIDB_VER.2
-    cp /shim/accelerated_io_tools-$SCIDB_VER.2/libaccelerated_io_tools.so \
+    make --directory=/shim/accelerated_io_tools-$SCIDB_VER.$AIO_VER
+    cp /shim/accelerated_io_tools-$SCIDB_VER.$AIO_VER/libaccelerated_io_tools.so \
        /opt/scidb/$SCIDB_VER/lib/scidb/plugins/
     iquery --afl --query "load_library('accelerated_io_tools')"
 

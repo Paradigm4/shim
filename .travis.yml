@@ -4,7 +4,7 @@ python:
   - "3.6"
 
 env:
-  global: SCIDB_VER=19.11 ARROW_VER=0.9.0-1
+  global: SCIDB_VER=19.11 AIO_VER=5 ARROW_VER=0.16.0-1
   jobs:
     - SCIDB_IMG=          TEST_BASIC=true
     - SCIDB_IMG=-xenial   TEST_BASIC=true
@@ -18,7 +18,7 @@ services:
 before_install:
   - if [ "$TEST_BASIC" = "false" ]; then
       wget --no-verbose --output-document -
-        https://github.com/Paradigm4/accelerated_io_tools/archive/v${SCIDB_VER}.2.tar.gz
+        https://github.com/Paradigm4/accelerated_io_tools/archive/v${SCIDB_VER}.${AIO_VER}.tar.gz
         | tar --extract --gzip --directory=. ;
       wget --no-verbose --output-document -
         https://github.com/Paradigm4/superfunpack/archive/v${SCIDB_VER}.1.tar.gz
@@ -30,6 +30,7 @@ before_install:
   - docker run
     --detach
     --env ARROW_VER=$ARROW_VER
+    --env AIO_VER=$AIO_VER
     --name scidb
     --publish 8080:8080
     --tmpfs /dev/shm
