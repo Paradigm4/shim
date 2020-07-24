@@ -13,7 +13,7 @@ then
             cut --delimiter : --fields 5 /etc/system-release-cpe
             )/apache-arrow-release-latest.rpm
 
-        for pkg in arrow-devel-$ARROW_VER.el6   \
+        for pkg in arrow-devel-$ARROW_VER       \
                    libpqxx-devel
         do
             yum install --assumeyes $pkg
@@ -37,10 +37,11 @@ else
              )/apache-arrow-archive-keyring-latest-$codename.deb
         apt install --assume-yes ./apache-arrow-archive-keyring-latest-$codename.deb
 
+        apt-get update
         apt-get install                         \
             --assume-yes                        \
             --no-install-recommends             \
-            libarrow-dev=$ARROW_VER             \
+            libarrow-dev=$ARROW_VER-1           \
             libpcre3-dev                        \
             libpqxx-dev
     fi

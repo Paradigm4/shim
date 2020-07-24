@@ -4,7 +4,7 @@ python:
   - "3.6"
 
 env:
-  global: SCIDB_VER=19.11 AIO_VER=5 ARROW_VER=0.16.0-1
+  global: SCIDB_VER=19.11 AIO_VER=5 ARROW_VER=0.16.0
   jobs:
     - SCIDB_IMG=          TEST_BASIC=true
     - SCIDB_IMG=-xenial   TEST_BASIC=true
